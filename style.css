@@ -1,25 +1,20 @@
-/* ========================= */
-/* Tailwind soporte mínimo */
-/* ========================= */
-
-/* Fuente base para todo el body */
+/* Fuente base */
 body {
   font-family: 'Poppins', sans-serif;
 }
 
-/* Limitar ancho del contenedor en pantallas grandes */
+/* Contenedor estrecho y acogedor */
 .container {
-  max-width: 24rem; /* más estrecho y acogedor */
+  max-width: 24rem;
 }
 
-/* Lista de tareas con scroll si se hace muy larga */
+/* Lista de tareas con scroll */
 #taskList {
   max-height: 40vh;
   overflow-y: auto;
   padding-right: 0.25rem;
 }
 
-/* Suavizado scrollbar */
 #taskList::-webkit-scrollbar {
   width: 6px;
 }
@@ -31,7 +26,29 @@ body {
   background-color: rgba(107,114,128,0.8);
 }
 
-/* Transición suave para todo el contenedor, botones e inputs */
-.container, button, input {
+/* Transición suave */
+.container, button, input, select {
   transition: all 0.2s ease-in-out;
+}
+
+/* Temas con variables CSS */
+body.theme-default {
+  --bg-gradient-start: #fda4af;
+  --bg-gradient-middle: #c084fc;
+  --bg-gradient-end: #818cf8;
+}
+body.theme-warm {
+  --bg-gradient-start: #fcd34d;
+  --bg-gradient-middle: #fb923c;
+  --bg-gradient-end: #f87171;
+}
+body.theme-cool {
+  --bg-gradient-start: #60a5fa;
+  --bg-gradient-middle: #3b82f6;
+  --bg-gradient-end: #2563eb;
+}
+
+/* Aplicar degradado dinámico según tema */
+body {
+  background: linear-gradient(to bottom right, var(--bg-gradient-start), var(--bg-gradient-middle), var(--bg-gradient-end));
 }

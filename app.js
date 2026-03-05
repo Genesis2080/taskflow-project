@@ -4,6 +4,9 @@ const taskList = document.getElementById("taskList")
 const taskCounter = document.getElementById("taskCounter")
 const filterButtons = document.querySelectorAll(".filters button")
 const darkModeBtn = document.getElementById("darkModeBtn")
+const themeSelector = document.getElementById("themeSelector")
+const categorySelector = document.getElementById("categorySelector")
+const prioritySelector = document.getElementById("prioritySelector")
 
 let tasks = JSON.parse(localStorage.getItem("tasks")) || []
 let currentFilter = "all"
@@ -13,7 +16,7 @@ function saveTasks(){
     localStorage.setItem("tasks", JSON.stringify(tasks))
 }
 
-// Actualizar contador de tareas pendientes
+// Contador
 function updateCounter(){
     const pending = tasks.filter(task => !task.completed).length
     taskCounter.textContent = pending
@@ -23,7 +26,6 @@ function updateCounter(){
 function renderTasks(){
     taskList.innerHTML=""
     let filteredTasks = tasks
-
     if(currentFilter==="pending") filteredTasks = tasks.filter(t=>!t.completed)
     if(currentFilter==="completed") filteredTasks = tasks.filter(t=>t.completed)
 
@@ -65,16 +67,19 @@ function renderTasks(){
     updateCounter()
 }
 
-// Añadir tarea
+// Añadir tarea con categoría y prioridad
 function addTask(){
     const text = taskInput.value.trim()
     if(!text) return
-    tasks.push({text, category:"General", priority:"progreso", completed:false})
+    const category = categorySelector.value
+    const priority = prioritySelector.value
+    tasks.push({text, category, priority, completed:false})
     taskInput.value=""
     saveTasks()
     renderTasks()
 }
 
+// Event listeners
 addBtn.addEventListener("click", addTask)
 taskInput.addEventListener("keypress", e=>{if(e.key==="Enter") addTask()})
 
@@ -86,9 +91,16 @@ filterButtons.forEach(button=>{
     }
 })
 
-// Modo oscuro funcional
+// Modo oscuro toggleable
 darkModeBtn.onclick = ()=>{
     document.documentElement.classList.toggle("dark")
 }
 
+// Cambio de tema
+themeSelector.onchange = (e)=>{
+    document.body.classList.remove("theme-default","theme-warm","theme-cool")
+    document.body.classList.add(`theme-${e.target.value}`)
+}
+
+// Render inicial
 renderTasks()
