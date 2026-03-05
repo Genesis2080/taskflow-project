@@ -1,239 +1,33 @@
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:'Poppins',sans-serif;
+/* Fuente base para todo el body */
+body {
+  font-family: 'Poppins', sans-serif;
 }
 
-body{
-background:linear-gradient(135deg,#4facfe,#00f2fe);
-min-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-transition:0.3s;
+/* Limitar ancho del contenedor en pantallas grandes */
+.container {
+  max-width: 28rem; /* 450px aprox */
 }
 
-.container{
-background:white;
-width:450px;
-padding:30px;
-border-radius:15px;
-box-shadow:0 15px 40px rgba(0,0,0,0.2);
-animation:fadeIn 0.8s ease;
+/* Lista de tareas con scroll si se hace muy larga */
+#taskList {
+  max-height: 40vh;
+  overflow-y: auto;
+  padding-right: 0.25rem; /* para el scrollbar */
 }
 
-header{
-text-align:center;
-margin-bottom:20px;
+/* Suavizado scrollbar para navegadores modernos */
+#taskList::-webkit-scrollbar {
+  width: 6px;
+}
+#taskList::-webkit-scrollbar-thumb {
+  background-color: rgba(107,114,128,0.5); /* gris semitransparente */
+  border-radius: 3px;
+}
+#taskList::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(107,114,128,0.8);
 }
 
-header h1{
-font-size:28px;
-color:#333;
-}
-
-header p{
-color:#777;
-font-size:14px;
-margin-bottom:10px;
-}
-
-#darkModeBtn{
-background:#333;
-color:white;
-border:none;
-padding:6px 10px;
-border-radius:6px;
-cursor:pointer;
-font-size:12px;
-}
-
-/* INPUT */
-
-.task-input{
-display:flex;
-gap:10px;
-margin-bottom:15px;
-}
-
-.task-input input{
-flex:1;
-padding:10px;
-border:2px solid #eee;
-border-radius:8px;
-outline:none;
-}
-
-.task-input button{
-background:#4facfe;
-color:white;
-border:none;
-padding:10px 18px;
-border-radius:8px;
-cursor:pointer;
-}
-
-/* FILTROS */
-
-.filters{
-display:flex;
-justify-content:space-between;
-margin-bottom:15px;
-}
-
-.filters button{
-flex:1;
-margin:2px;
-padding:8px;
-border:none;
-border-radius:6px;
-background:#eee;
-cursor:pointer;
-}
-
-.filters button:hover{
-background:#ddd;
-}
-
-/* LISTA DE TAREAS */
-
-ul{
-list-style:none;
-}
-
-li{
-display:flex;
-justify-content:space-between;
-align-items:center;
-background:#f7f7f7;
-padding:12px;
-border-radius:8px;
-margin-bottom:10px;
-animation:slideIn 0.3s ease;
-}
-
-li.completed{
-text-decoration:line-through;
-opacity:0.6;
-}
-
-/* INFO TAREA */
-
-.task-info{
-display:flex;
-align-items:center;
-gap:12px;
-}
-
-.task-title{
-font-weight:500;
-}
-
-/* CATEGORIA */
-
-.task-category{
-background:#e3f2fd;
-color:#1976d2;
-padding:3px 8px;
-border-radius:6px;
-font-size:12px;
-}
-
-/* PRIORIDADES */
-
-.task-priority{
-padding:3px 8px;
-border-radius:6px;
-font-size:12px;
-color:white;
-}
-
-.priority-urgente{
-background:#dc3545;
-}
-
-.priority-progreso{
-background:#ffc107;
-color:black;
-}
-
-.priority-opcional{
-background:#28a745;
-}
-
-/* BOTONES */
-
-.task-buttons{
-display:flex;
-gap:8px;
-}
-
-.complete-btn{
-background:#28a745;
-color:white;
-border:none;
-padding:5px 8px;
-border-radius:6px;
-cursor:pointer;
-}
-
-.delete-btn{
-background:#dc3545;
-color:white;
-border:none;
-padding:5px 8px;
-border-radius:6px;
-cursor:pointer;
-}
-
-/* CONTADOR */
-
-.task-counter{
-text-align:center;
-margin-top:10px;
-font-size:14px;
-color:#555;
-}
-
-/* FOOTER */
-
-footer{
-text-align:center;
-margin-top:20px;
-font-size:12px;
-color:#777;
-}
-
-/* MODO OSCURO */
-
-.dark-mode{
-background:#1e1e1e;
-}
-
-.dark-mode .container{
-background:#2c2c2c;
-color:white;
-}
-
-.dark-mode input{
-background:#444;
-color:white;
-border-color:#555;
-}
-
-.dark-mode li{
-background:#444;
-}
-
-/* ANIMACIONES */
-
-@keyframes fadeIn{
-from{opacity:0;transform:translateY(-20px);}
-to{opacity:1;transform:translateY(0);}
-}
-
-@keyframes slideIn{
-from{opacity:0;transform:translateX(-10px);}
-to{opacity:1;transform:translateX(0);}
+/* Transición suave para todo el contenedor, botones e inputs */
+.container, button, input {
+  transition: all 0.2s ease-in-out;
 }

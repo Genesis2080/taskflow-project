@@ -1,47 +1,47 @@
 <!DOCTYPE html>
-<html lang="es">
-
+<html lang="es" class="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestor de Tareas</title>
-
+<title>Gestor de Tareas - Tailwind</title>
+<script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="style.css">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-
 </head>
+<body class="bg-gradient-to-br from-blue-400 to-cyan-400 min-h-screen flex items-center justify-center transition-colors duration-500 dark:bg-gray-900">
 
-<body>
+<div class="container bg-white dark:bg-gray-800 w-full p-8 rounded-xl shadow-2xl transition-colors duration-500">
+  <!-- Header -->
+  <header class="text-center mb-6">
+    <h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-100">Gestor de Tareas</h1>
+    <p class="text-sm text-gray-500 dark:text-gray-300 mb-2">Organiza tu día de forma eficiente</p>
+    <button id="darkModeBtn" class="px-3 py-1 bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-gray-700 dark:hover:bg-gray-300 transition">🌙 Modo oscuro</button>
+  </header>
 
-<div class="container">
+  <!-- Input de nueva tarea -->
+  <div class="flex gap-2 mb-4">
+    <input id="taskInput" type="text" placeholder="Escribe una nueva tarea..." 
+           class="flex-1 p-2 border-2 border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+    <button id="addBtn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 dark:bg-blue-400 dark:hover:bg-blue-500 transition">Añadir</button>
+  </div>
 
-<header>
-<h1>Gestor de Tareas</h1>
-<p>Organiza tu día de forma eficiente</p>
-<button id="darkModeBtn">🌙 Modo oscuro</button>
-</header>
+  <!-- Filtros -->
+  <div class="flex gap-2 mb-4">
+    <button data-filter="all" class="flex-1 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition">Todas</button>
+    <button data-filter="pending" class="flex-1 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition">Pendientes</button>
+    <button data-filter="completed" class="flex-1 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition">Completadas</button>
+  </div>
 
-<div class="task-input">
-<input type="text" id="taskInput" placeholder="Escribe una nueva tarea...">
-<button id="addBtn">Añadir</button>
-</div>
+  <!-- Lista de tareas -->
+  <ul id="taskList" class="space-y-2"></ul>
 
-<div class="filters">
-<button data-filter="all">Todas</button>
-<button data-filter="pending">Pendientes</button>
-<button data-filter="completed">Completadas</button>
-</div>
+  <!-- Contador -->
+  <div class="text-center mt-4 text-gray-700 dark:text-gray-300">
+    Tareas pendientes: <span id="taskCounter">0</span>
+  </div>
 
-<ul id="taskList"></ul>
-
-<div class="task-counter">
-Tareas pendientes: <span id="taskCounter">0</span>
-</div>
-
-<footer>
-<p>Gestor de Tareas • Aplicación simple</p>
-</footer>
-
+  <footer class="text-center mt-6 text-sm text-gray-500 dark:text-gray-400">
+    Gestor de Tareas • Aplicación Tailwind
+  </footer>
 </div>
 
 <script src="app.js"></script>
