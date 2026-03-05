@@ -1,8 +1,103 @@
-body { font-family: 'Poppins', sans-serif; }
-.container { max-width: 24rem; border-radius: 1rem; }
-#taskList { max-height: 40vh; overflow-y:auto; padding-right:0.25rem; }
-#taskList::-webkit-scrollbar { width:6px; }
-#taskList::-webkit-scrollbar-thumb { background-color: rgba(107,114,128,0.5); border-radius:3px; }
-#taskList::-webkit-scrollbar-thumb:hover { background-color: rgba(107,114,128,0.8); }
-.input-task { flex:1; padding:0.5rem; border:2px solid #d1d5db; border-radius:0.5rem; background-color:#f9fafb; color:#111827; outline:none; transition: all 0.2s ease-in-out; }
-.input-task:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 2px rgba(59,130,246,0.5); background-color:#fff; }
+/* ========================= */
+/* Base y temas */
+/* ========================= */
+
+/* Fuente */
+body {
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Contenedor estrecho y acogedor */
+.container {
+  max-width: 24rem;
+  border-radius: 1rem;
+}
+
+/* Lista de tareas */
+#taskList {
+  max-height: 40vh;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+#taskList::-webkit-scrollbar {
+  width: 6px;
+}
+#taskList::-webkit-scrollbar-thumb {
+  background-color: rgba(107,114,128,0.5);
+  border-radius: 3px;
+}
+#taskList::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(107,114,128,0.8);
+}
+
+/* Transiciones suaves */
+.container, button, input, select {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Temas con variables CSS */
+body.theme-default {
+  --bg-gradient-start: #fda4af;
+  --bg-gradient-middle: #c084fc;
+  --bg-gradient-end: #818cf8;
+}
+body.theme-warm {
+  --bg-gradient-start: #fcd34d;
+  --bg-gradient-middle: #fb923c;
+  --bg-gradient-end: #f87171;
+}
+body.theme-cool {
+  --bg-gradient-start: #60a5fa;
+  --bg-gradient-middle: #3b82f6;
+  --bg-gradient-end: #2563eb;
+}
+body.dark-funebre {
+  --bg-gradient-start: #1f1f1f;
+  --bg-gradient-middle: #111111;
+  --bg-gradient-end: #2a2a2a;
+}
+
+/* Fondo dinámico según tema */
+body {
+  background: linear-gradient(to bottom right, var(--bg-gradient-start), var(--bg-gradient-middle), var(--bg-gradient-end));
+}
+
+/* Inputs */
+.input-task {
+  flex:1; padding:0.5rem; border:2px solid #d1d5db; border-radius:0.5rem;
+  background-color:#f9fafb; color:#111827; outline:none;
+}
+.input-task:focus {
+  outline:none;
+  border-color:#3b82f6;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.5);
+  background-color:#fff;
+}
+
+/* Selects mejorados */
+.select-task, .select-theme {
+  flex:1; padding:0.5rem 1rem 0.5rem 0.5rem; border:2px solid #d1d5db; border-radius:0.5rem;
+  background-color:#f9fafb; color:#111827; outline:none;
+  appearance:none; /* quitar flecha del navegador */
+  cursor:pointer;
+  background-image: url('data:image/svg+xml;utf8,<svg fill="none" stroke="%23111827" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1rem;
+}
+
+/* Hover y focus */
+.select-task:hover, .select-theme:hover {
+  border-color:#3b82f6;
+}
+.select-task:focus, .select-theme:focus {
+  outline:none;
+  border-color:#3b82f6;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.5);
+}
+
+/* Animación sutil al abrir */
+.select-task, .select-theme {
+  transition: all 0.25s ease;
+}
