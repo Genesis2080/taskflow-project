@@ -48,7 +48,6 @@ function renderTasks(){
           <button class="delete-btn px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 dark:bg-red-400 dark:hover:bg-red-500 transition">✖</button>
         </div>
         `
-        // Eventos botones
         li.querySelector(".complete-btn").onclick = ()=>{
             task.completed = !task.completed
             saveTasks()
@@ -87,7 +86,7 @@ filterButtons.forEach(button=>{
     }
 })
 
-// Modo oscuro
+// Modo oscuro funcional
 darkModeBtn.onclick = ()=>{
     document.documentElement.classList.toggle("dark")
 }

@@ -1,3 +1,7 @@
+/* ========================= */
+/* Tailwind soporte mínimo */
+/* ========================= */
+
 /* Fuente base para todo el body */
 body {
   font-family: 'Poppins', sans-serif;
@@ -5,22 +9,22 @@ body {
 
 /* Limitar ancho del contenedor en pantallas grandes */
 .container {
-  max-width: 24rem; /* 450px aprox */
+  max-width: 24rem; /* más estrecho y acogedor */
 }
 
 /* Lista de tareas con scroll si se hace muy larga */
 #taskList {
   max-height: 40vh;
   overflow-y: auto;
-  padding-right: 0.25rem; /* para el scrollbar */
+  padding-right: 0.25rem;
 }
 
-/* Suavizado scrollbar para navegadores modernos */
+/* Suavizado scrollbar */
 #taskList::-webkit-scrollbar {
   width: 6px;
 }
 #taskList::-webkit-scrollbar-thumb {
-  background-color: rgba(107,114,128,0.5); /* gris semitransparente */
+  background-color: rgba(107,114,128,0.5);
   border-radius: 3px;
 }
 #taskList::-webkit-scrollbar-thumb:hover {
