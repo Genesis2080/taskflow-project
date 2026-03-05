@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
+
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TaskFlow</title>
+
+<title>Gestor de Tareas</title>
 
 <link rel="stylesheet" href="style.css">
 
@@ -16,26 +19,42 @@
 <div class="container">
 
 <header>
-<h1>TaskFlow</h1>
-<p>Organize your day efficiently</p>
+
+<h1>Gestor de Tareas</h1>
+<p>Organiza tu día de forma eficiente</p>
+
+<button id="darkModeBtn">🌙 Modo oscuro</button>
+
 </header>
 
 <div class="task-input">
 
 <input 
-type="text" 
-id="taskInput" 
-placeholder="Write a new task..."
+type="text"
+id="taskInput"
+placeholder="Escribe una nueva tarea..."
 >
 
-<button id="addBtn">Add</button>
+<button id="addBtn">Añadir</button>
+
+</div>
+
+<div class="filters">
+
+<button data-filter="all">Todas</button>
+<button data-filter="pending">Pendientes</button>
+<button data-filter="completed">Completadas</button>
 
 </div>
 
 <ul id="taskList"></ul>
 
+<div class="task-counter">
+Tareas pendientes: <span id="taskCounter">0</span>
+</div>
+
 <footer>
-<p>TaskFlow • Simple Task Manager</p>
+<p>Gestor de Tareas • Aplicación simple</p>
 </footer>
 
 </div>

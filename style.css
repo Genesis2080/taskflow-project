@@ -11,11 +11,12 @@ min-height:100vh;
 display:flex;
 justify-content:center;
 align-items:center;
+transition:0.3s;
 }
 
 .container{
 background:white;
-width:400px;
+width:420px;
 padding:30px;
 border-radius:15px;
 box-shadow:0 15px 40px rgba(0,0,0,0.2);
@@ -35,12 +36,23 @@ color:#333;
 header p{
 color:#777;
 font-size:14px;
+margin-bottom:10px;
+}
+
+#darkModeBtn{
+background:#333;
+color:white;
+border:none;
+padding:6px 10px;
+border-radius:6px;
+cursor:pointer;
+font-size:12px;
 }
 
 .task-input{
 display:flex;
 gap:10px;
-margin-bottom:20px;
+margin-bottom:15px;
 }
 
 .task-input input{
@@ -49,11 +61,6 @@ padding:10px;
 border:2px solid #eee;
 border-radius:8px;
 outline:none;
-transition:0.3s;
-}
-
-.task-input input:focus{
-border-color:#4facfe;
 }
 
 .task-input button{
@@ -63,11 +70,26 @@ border:none;
 padding:10px 18px;
 border-radius:8px;
 cursor:pointer;
-transition:0.3s;
 }
 
-.task-input button:hover{
-background:#3a8ee6;
+.filters{
+display:flex;
+justify-content:space-between;
+margin-bottom:15px;
+}
+
+.filters button{
+flex:1;
+margin:2px;
+padding:8px;
+border:none;
+border-radius:6px;
+background:#eee;
+cursor:pointer;
+}
+
+.filters button:hover{
+background:#ddd;
 }
 
 ul{
@@ -113,12 +135,42 @@ border-radius:6px;
 cursor:pointer;
 }
 
+.task-counter{
+text-align:center;
+margin-top:10px;
+font-size:14px;
+color:#555;
+}
+
 footer{
 text-align:center;
 margin-top:20px;
 font-size:12px;
 color:#777;
 }
+
+/* MODO OSCURO */
+
+.dark-mode{
+background:#1e1e1e;
+}
+
+.dark-mode .container{
+background:#2c2c2c;
+color:white;
+}
+
+.dark-mode input{
+background:#444;
+color:white;
+border-color:#555;
+}
+
+.dark-mode li{
+background:#444;
+}
+
+/* Animaciones */
 
 @keyframes fadeIn{
 from{opacity:0;transform:translateY(-20px);}
