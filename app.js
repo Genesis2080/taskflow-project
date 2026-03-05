@@ -1,24 +1,29 @@
-const taskInput = document.getElementById("taskInput")
-const addBtn = document.getElementById("addBtn")
-const taskList = document.getElementById("taskList")
-const taskCounter = document.getElementById("taskCounter")
-const filterButtons = document.querySelectorAll(".filters button")
-const darkModeBtn = document.getElementById("darkModeBtn")
-const themeSelector = document.getElementById("themeSelector")
-const categorySelector = document.getElementById("categorySelector")
-const prioritySelector = document.getElementById("prioritySelector")
+const taskInput=document.getElementById("taskInput")
+const addBtn=document.getElementById("addBtn")
+const taskList=document.getElementById("taskList")
+const taskCounter=document.getElementById("taskCounter")
+const filterButtons=document.querySelectorAll(".filters button")
+const darkModeBtn=document.getElementById("darkModeBtn")
 
-let tasks = JSON.parse(localStorage.getItem("tasks")) || []
-let currentFilter = "all"
+// Selects flotantes
+const themeBtn=document.getElementById("themeSelectorBtn")
+const themeDropdown=document.getElementById("themeDropdown")
+const categoryBtn=document.getElementById("categoryBtn")
+const categoryDropdown=document.getElementById("categoryDropdown")
+const priorityBtn=document.getElementById("priorityBtn")
+const priorityDropdown=document.getElementById("priorityDropdown")
 
-// Guardar tareas
-function saveTasks(){ localStorage.setItem("tasks", JSON.stringify(tasks)) }
-function updateCounter(){ taskCounter.textContent = tasks.filter(t=>!t.completed).length }
+let tasks=JSON.parse(localStorage.getItem("tasks"))||[]
+let currentFilter="all"
 
-// Renderizar lista
+// Guardar
+function saveTasks(){ localStorage.setItem("tasks",JSON.stringify(tasks)) }
+function updateCounter(){ taskCounter.textContent=tasks.filter(t=>!t.completed).length }
+
+// Render
 function renderTasks(){
     taskList.innerHTML=""
-    let filtered = tasks
+    let filtered=tasks
     if(currentFilter==="pending") filtered=tasks.filter(t=>!t.completed)
     if(currentFilter==="completed") filtered=tasks.filter(t=>t.completed)
     filtered.forEach(task=>{
@@ -37,12 +42,8 @@ function renderTasks(){
           <button class="complete-btn px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 dark:bg-green-400 dark:hover:bg-green-500 transition">✔</button>
           <button class="delete-btn px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 dark:bg-red-400 dark:hover:bg-red-500 transition">✖</button>
         </div>`
-        li.querySelector(".complete-btn").onclick=()=>{
-            task.completed=!task.completed; saveTasks(); renderTasks()
-        }
-        li.querySelector(".delete-btn").onclick=()=>{
-            tasks.splice(tasks.indexOf(task),1); saveTasks(); renderTasks()
-        }
+        li.querySelector(".complete-btn").onclick=()=>{ task.completed=!task.completed; saveTasks(); renderTasks() }
+        li.querySelector(".delete-btn").onclick=()=>{ tasks.splice(tasks.indexOf(task),1); saveTasks(); renderTasks() }
         taskList.appendChild(li)
     })
     updateCounter()
@@ -52,38 +53,39 @@ function renderTasks(){
 function addTask(){
     const text=taskInput.value.trim()
     if(!text) return
-    const category=categorySelector.value
-    const priority=prioritySelector.value
+    const category=categoryBtn.dataset.value||"General"
+    const priority=priorityBtn.dataset.value||"urgente"
     tasks.push({text, category, priority, completed:false})
     taskInput.value=""
     saveTasks()
     renderTasks()
 }
 
+// Listeners
 addBtn.addEventListener("click", addTask)
-taskInput.addEventListener("keypress", e=>{if(e.key==="Enter") addTask()})
-
-// Filtros
+taskInput.addEventListener("keypress",e=>{if(e.key==="Enter") addTask()})
 filterButtons.forEach(btn=>{ btn.onclick=()=>{ currentFilter=btn.dataset.filter; renderTasks() } })
 
-// Modo oscuro fúnebre
+// Modo fúnebre
 darkModeBtn.onclick=()=>{
-    if(document.body.classList.contains("dark-funebre")){
-        document.body.classList.remove("dark-funebre")
-        document.body.classList.add(themeSelector.value==="default"?"theme-default":`theme-${themeSelector.value}`)
-    } else {
-        document.body.classList.remove("theme-default","theme-warm","theme-cool")
-        document.body.classList.add("dark-funebre")
-    }
+    document.body.classList.toggle("dark-funebre")
 }
 
-// Cambio de tema
-themeSelector.onchange = e=>{
-    if(!document.body.classList.contains("dark-funebre")){
-        document.body.classList.remove("theme-default","theme-warm","theme-cool")
-        document.body.classList.add(`theme-${e.target.value}`)
-    }
+// Dropdowns flotantes
+function setupDropdown(btn, dropdown){
+    btn.addEventListener("click",()=>{ dropdown.classList.toggle("hidden") })
+    dropdown.querySelectorAll("li").forEach(li=>{
+        li.addEventListener("click",()=>{
+            btn.textContent=btn.textContent.split(":")[0]+": "+li.dataset.value
+            btn.dataset.value=li.dataset.value
+            dropdown.classList.add("hidden")
+        })
+    })
 }
+// Inicializar
+setupDropdown(themeBtn, themeDropdown)
+setupDropdown(categoryBtn, categoryDropdown)
+setupDropdown(priorityBtn, priorityDropdown)
 
 // Render inicial
 renderTasks()

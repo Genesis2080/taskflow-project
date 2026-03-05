@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestor de Tareas - Modo Fúnebre</title>
+<title>Gestor de Tareas - Selects Flotantes</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -15,30 +15,50 @@
     <h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-100">Gestor de Tareas</h1>
     <p class="text-sm text-gray-500 dark:text-gray-300 mb-2">Organiza tu día de forma eficiente</p>
     <div class="flex justify-center gap-2 mb-2">
-      <button id="darkModeBtn" class="px-3 py-1 bg-gray-800 text-white rounded hover:bg-gray-700 transition">🌙 Modo oscuro</button>
-      <select id="themeSelector" class="select-theme">
-        <option value="default">Predeterminado</option>
-        <option value="warm">Cálido</option>
-        <option value="cool">Frío</option>
-      </select>
+      <button id="darkModeBtn" class="px-3 py-1 bg-gray-800 text-white rounded hover:bg-gray-700 transition">🌙 Modo fúnebre</button>
+      <div class="relative w-32">
+        <button id="themeSelectorBtn" class="w-full text-left px-3 py-1 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white flex justify-between items-center">
+          Tema: Predeterminado
+          <span class="ml-2">▾</span>
+        </button>
+        <ul id="themeDropdown" class="absolute z-10 hidden w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg overflow-hidden transition-all">
+          <li class="px-3 py-1 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer" data-value="default">Predeterminado</li>
+          <li class="px-3 py-1 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer" data-value="warm">Cálido</li>
+          <li class="px-3 py-1 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer" data-value="cool">Frío</li>
+        </ul>
+      </div>
     </div>
   </header>
 
-  <!-- Input y selectores -->
+  <!-- Input y selects flotantes para tarea -->
   <div class="flex flex-col gap-2 mb-4">
     <input id="taskInput" type="text" placeholder="Escribe una nueva tarea..." class="input-task">
     <div class="flex gap-2">
-      <select id="categorySelector" class="select-task">
-        <option value="General">General</option>
-        <option value="Trabajo">Trabajo</option>
-        <option value="Estudio">Estudio</option>
-        <option value="Personal">Personal</option>
-      </select>
-      <select id="prioritySelector" class="select-task">
-        <option value="urgente">Urgente</option>
-        <option value="progreso">En progreso</option>
-        <option value="opcional">Opcional</option>
-      </select>
+      <div class="relative flex-1">
+        <button id="categoryBtn" class="w-full text-left px-3 py-1 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white flex justify-between items-center">
+          Categoría: General
+          <span class="ml-2">▾</span>
+        </button>
+        <ul id="categoryDropdown" class="absolute z-10 hidden w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg overflow-hidden transition-all">
+          <li class="px-3 py-1 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer" data-value="General">General</li>
+          <li class="px-3 py-1 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer" data-value="Trabajo">Trabajo</li>
+          <li class="px-3 py-1 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer" data-value="Estudio">Estudio</li>
+          <li class="px-3 py-1 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer" data-value="Personal">Personal</li>
+        </ul>
+      </div>
+
+      <div class="relative flex-1">
+        <button id="priorityBtn" class="w-full text-left px-3 py-1 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white flex justify-between items-center">
+          Prioridad: Urgente
+          <span class="ml-2">▾</span>
+        </button>
+        <ul id="priorityDropdown" class="absolute z-10 hidden w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg overflow-hidden transition-all">
+          <li class="px-3 py-1 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer" data-value="urgente">Urgente</li>
+          <li class="px-3 py-1 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer" data-value="progreso">En progreso</li>
+          <li class="px-3 py-1 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer" data-value="opcional">Opcional</li>
+        </ul>
+      </div>
+
       <button id="addBtn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition">Añadir</button>
     </div>
   </div>
@@ -59,7 +79,7 @@
   </div>
 
   <footer class="text-center mt-6 text-sm text-gray-500 dark:text-gray-400">
-    Gestor de Tareas • Temas y Modo Fúnebre
+    Gestor de Tareas
   </footer>
 </div>
 
