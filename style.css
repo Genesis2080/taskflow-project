@@ -16,7 +16,7 @@ transition:0.3s;
 
 .container{
 background:white;
-width:420px;
+width:450px;
 padding:30px;
 border-radius:15px;
 box-shadow:0 15px 40px rgba(0,0,0,0.2);
@@ -49,6 +49,8 @@ cursor:pointer;
 font-size:12px;
 }
 
+/* INPUT */
+
 .task-input{
 display:flex;
 gap:10px;
@@ -72,6 +74,8 @@ border-radius:8px;
 cursor:pointer;
 }
 
+/* FILTROS */
+
 .filters{
 display:flex;
 justify-content:space-between;
@@ -92,18 +96,20 @@ cursor:pointer;
 background:#ddd;
 }
 
+/* LISTA DE TAREAS */
+
 ul{
 list-style:none;
 }
 
 li{
+display:flex;
+justify-content:space-between;
+align-items:center;
 background:#f7f7f7;
 padding:12px;
 border-radius:8px;
 margin-bottom:10px;
-display:flex;
-justify-content:space-between;
-align-items:center;
 animation:slideIn 0.3s ease;
 }
 
@@ -111,6 +117,52 @@ li.completed{
 text-decoration:line-through;
 opacity:0.6;
 }
+
+/* INFO TAREA */
+
+.task-info{
+display:flex;
+align-items:center;
+gap:12px;
+}
+
+.task-title{
+font-weight:500;
+}
+
+/* CATEGORIA */
+
+.task-category{
+background:#e3f2fd;
+color:#1976d2;
+padding:3px 8px;
+border-radius:6px;
+font-size:12px;
+}
+
+/* PRIORIDADES */
+
+.task-priority{
+padding:3px 8px;
+border-radius:6px;
+font-size:12px;
+color:white;
+}
+
+.priority-urgente{
+background:#dc3545;
+}
+
+.priority-progreso{
+background:#ffc107;
+color:black;
+}
+
+.priority-opcional{
+background:#28a745;
+}
+
+/* BOTONES */
 
 .task-buttons{
 display:flex;
@@ -135,12 +187,16 @@ border-radius:6px;
 cursor:pointer;
 }
 
+/* CONTADOR */
+
 .task-counter{
 text-align:center;
 margin-top:10px;
 font-size:14px;
 color:#555;
 }
+
+/* FOOTER */
 
 footer{
 text-align:center;
@@ -170,7 +226,7 @@ border-color:#555;
 background:#444;
 }
 
-/* Animaciones */
+/* ANIMACIONES */
 
 @keyframes fadeIn{
 from{opacity:0;transform:translateY(-20px);}

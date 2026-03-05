@@ -2,14 +2,11 @@
 <html lang="es">
 
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Gestor de Tareas</title>
 
 <link rel="stylesheet" href="style.css">
-
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 </head>
@@ -19,32 +16,20 @@
 <div class="container">
 
 <header>
-
 <h1>Gestor de Tareas</h1>
 <p>Organiza tu día de forma eficiente</p>
-
 <button id="darkModeBtn">🌙 Modo oscuro</button>
-
 </header>
 
 <div class="task-input">
-
-<input 
-type="text"
-id="taskInput"
-placeholder="Escribe una nueva tarea..."
->
-
+<input type="text" id="taskInput" placeholder="Escribe una nueva tarea...">
 <button id="addBtn">Añadir</button>
-
 </div>
 
 <div class="filters">
-
 <button data-filter="all">Todas</button>
 <button data-filter="pending">Pendientes</button>
 <button data-filter="completed">Completadas</button>
-
 </div>
 
 <ul id="taskList"></ul>
@@ -60,6 +45,5 @@ Tareas pendientes: <span id="taskCounter">0</span>
 </div>
 
 <script src="app.js"></script>
-
 </body>
 </html>

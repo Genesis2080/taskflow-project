@@ -9,107 +9,103 @@ let tasks = JSON.parse(localStorage.getItem("tasks")) || []
 let currentFilter = "all"
 
 function saveTasks(){
-localStorage.setItem("tasks", JSON.stringify(tasks))
+    localStorage.setItem("tasks", JSON.stringify(tasks))
 }
 
 function updateCounter(){
-
-const pending = tasks.filter(task => !task.completed).length
-taskCounter.textContent = pending
-
+    const pending = tasks.filter(task => !task.completed).length
+    taskCounter.textContent = pending
 }
 
 function renderTasks(){
 
-taskList.innerHTML=""
+    taskList.innerHTML=""
 
-let filteredTasks = tasks
+    let filteredTasks = tasks
 
-if(currentFilter==="pending"){
-filteredTasks = tasks.filter(task=>!task.completed)
-}
+    if(currentFilter==="pending"){
+        filteredTasks = tasks.filter(task=>!task.completed)
+    }
 
-if(currentFilter==="completed"){
-filteredTasks = tasks.filter(task=>task.completed)
-}
+    if(currentFilter==="completed"){
+        filteredTasks = tasks.filter(task=>task.completed)
+    }
 
-filteredTasks.forEach((task,index)=>{
+    filteredTasks.forEach((task)=>{
 
-const li=document.createElement("li")
+        const li=document.createElement("li")
 
-if(task.completed){
-li.classList.add("completed")
-}
+        if(task.completed){
+            li.classList.add("completed")
+        }
 
-li.innerHTML=`
+        li.innerHTML = `
+        <div class="task-info">
+            <span class="task-title">${task.text}</span>
+            <span class="task-category">${task.category}</span>
+            <span class="task-priority priority-${task.priority}">
+                ${task.priority === "urgente" ? "Urgente" : task.priority === "progreso" ? "En progreso" : "Opcional"}
+            </span>
+        </div>
 
-<span>${task.text}</span>
+        <div class="task-buttons">
+            <button class="complete-btn">✔</button>
+            <button class="delete-btn">✖</button>
+        </div>
+        `
 
-<div class="task-buttons">
-<button class="complete-btn">✔</button>
-<button class="delete-btn">✖</button>
-</div>
+        const completeBtn = li.querySelector(".complete-btn")
+        const deleteBtn = li.querySelector(".delete-btn")
 
-`
+        completeBtn.onclick=()=>{
+            task.completed=!task.completed
+            saveTasks()
+            renderTasks()
+        }
 
-const completeBtn = li.querySelector(".complete-btn")
-const deleteBtn = li.querySelector(".delete-btn")
+        deleteBtn.onclick=()=>{
+            tasks.splice(tasks.indexOf(task),1)
+            saveTasks()
+            renderTasks()
+        }
 
-completeBtn.onclick=()=>{
-task.completed=!task.completed
-saveTasks()
-renderTasks()
-}
+        taskList.appendChild(li)
+    })
 
-deleteBtn.onclick=()=>{
-tasks.splice(tasks.indexOf(task),1)
-saveTasks()
-renderTasks()
-}
-
-taskList.appendChild(li)
-
-})
-
-updateCounter()
-
+    updateCounter()
 }
 
 function addTask(){
+    const text = taskInput.value.trim()
+    if(text==="") return
 
-const text = taskInput.value.trim()
+    tasks.push({
+        text:text,
+        category:"General",
+        priority:"progreso",
+        completed:false
+    })
 
-if(text==="") return
-
-tasks.push({
-text:text,
-completed:false
-})
-
-taskInput.value=""
-
-saveTasks()
-renderTasks()
-
+    taskInput.value=""
+    saveTasks()
+    renderTasks()
 }
 
 addBtn.addEventListener("click",addTask)
 
 taskInput.addEventListener("keypress",(e)=>{
-if(e.key==="Enter") addTask()
+    if(e.key==="Enter") addTask()
 })
 
 filterButtons.forEach(button=>{
-
-button.onclick=()=>{
-currentFilter = button.dataset.filter
-renderTasks()
-}
-
+    button.onclick=()=>{
+        currentFilter = button.dataset.filter
+        renderTasks()
+    }
 })
 
 darkModeBtn.onclick=()=>{
-document.body.classList.toggle("dark-mode")
+    document.body.classList.toggle("dark-mode")
 }
 
 renderTasks()
