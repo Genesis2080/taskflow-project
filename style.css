@@ -5,7 +5,7 @@ body {
 
 /* Limitar ancho del contenedor en pantallas grandes */
 .container {
-  max-width: 28rem; /* 450px aprox */
+  max-width: 24rem; /* 450px aprox */
 }
 
 /* Lista de tareas con scroll si se hace muy larga */
