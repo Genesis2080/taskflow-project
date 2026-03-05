@@ -1,4 +1,4 @@
-/* Fuente base */
+/* Fuente */
 body {
   font-family: 'Poppins', sans-serif;
 }
@@ -6,9 +6,10 @@ body {
 /* Contenedor estrecho y acogedor */
 .container {
   max-width: 24rem;
+  border-radius: 1rem;
 }
 
-/* Lista de tareas con scroll */
+/* Lista de tareas */
 #taskList {
   max-height: 40vh;
   overflow-y: auto;
@@ -26,7 +27,7 @@ body {
   background-color: rgba(107,114,128,0.8);
 }
 
-/* Transición suave */
+/* Transiciones suaves */
 .container, button, input, select {
   transition: all 0.2s ease-in-out;
 }
@@ -47,8 +48,43 @@ body.theme-cool {
   --bg-gradient-middle: #3b82f6;
   --bg-gradient-end: #2563eb;
 }
+body.dark-funebre {
+  --bg-gradient-start: #1f1f1f;
+  --bg-gradient-middle: #111111;
+  --bg-gradient-end: #2a2a2a;
+}
 
-/* Aplicar degradado dinámico según tema */
+/* Fondo dinámico según tema */
 body {
   background: linear-gradient(to bottom right, var(--bg-gradient-start), var(--bg-gradient-middle), var(--bg-gradient-end));
+}
+
+/* Inputs y selects */
+.input-task {
+  flex:1; padding:0.5rem; border:2px solid #d1d5db; border-radius:0.5rem;
+  background-color:#f9fafb; color:#111827; outline:none;
+  transition: all 0.2s ease-in-out;
+}
+.input-task:focus {
+  outline:none;
+  border-color:#3b82f6;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.5); /* simula ring de Tailwind */
+  background-color:#fff;
+}
+
+/* Selects mejorados */
+.select-task, .select-theme {
+  flex:1; padding:0.5rem; border:2px solid #d1d5db; border-radius:0.5rem;
+  background-color:#f9fafb; color:#111827; outline:none;
+  appearance:none; /* Quita flecha por defecto */
+  cursor:pointer;
+  transition: all 0.2s ease-in-out;
+}
+.select-task:hover, .select-theme:hover {
+  border-color:#3b82f6;
+}
+.select-task:focus, .select-theme:focus {
+  outline:none;
+  border-color:#3b82f6;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.5); /* simula ring */
 }
