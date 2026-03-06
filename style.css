@@ -207,3 +207,29 @@ background:#1e293b;
 color:white;
 border-color:#334155;
 }
+
+/* ========================= */
+/* BOTONES DE FILTRO MODO NOCHE */
+/* ========================= */
+
+body.theme-night .filters button {
+  background-color: rgba(55, 65, 81, 0.8); /* gris oscuro */
+  color: #f9fafb; /* texto blanco */
+  border: 1px solid rgba(100, 116, 139, 0.6);
+}
+
+body.theme-night .filters button:hover {
+  background-color: rgba(75, 85, 99, 0.9); /* un poco más claro al hover */
+}
+
+/* Para compatibilidad general con dark de Tailwind */
+
+.dark .filters button {
+  background-color: rgba(55, 65, 81, 0.8);
+  color: #f9fafb;
+  border: 1px solid rgba(100, 116, 139, 0.6);
+}
+
+.dark .filters button:hover {
+  background-color: rgba(75, 85, 99, 0.9);
+}
