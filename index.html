@@ -1,110 +1,69 @@
 <!DOCTYPE html>
-<html lang="es" class="transition-colors duration-500">
+<html lang="es" class="transition-colors duration-700">
 
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestor de Tareas</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestor de Tareas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="theme-default min-h-screen flex items-center justify-center transition-colors duration-700">
+<body class="theme-default min-h-screen flex items-center justify-center bg-gradient-to-br from-theme-default-start via-theme-default-middle to-theme-default-end dark:from-funebre-start dark:via-funebre-middle dark:to-funebre-end transition-colors duration-700">
 
-<div class="container theme-container w-full max-w-sm p-8 rounded-xl shadow-2xl backdrop-blur transition-all duration-700">
+  <div class="w-full max-w-sm p-8 rounded-xl shadow-2xl backdrop-blur bg-white/90 dark:bg-gray-900/90 transition-colors duration-700">
+    <!-- Header -->
+    <header class="text-center mb-6">
+      <h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-100">Gestor de Tareas</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-300 mb-2">Organiza tu día de forma eficiente</p>
+      <div class="flex justify-center gap-2 mb-2">
+        <button id="darkModeBtn" class="px-3 py-1 rounded-lg bg-gray-800 text-white hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 transition">🌙 Modo noche</button>
+        <select id="themeSelector" class="flex-1 px-3 py-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 appearance-none cursor-pointer transition">
+          <option value="default">Predeterminado</option>
+          <option value="warm">Cálido</option>
+          <option value="cool">Frío</option>
+        </select>
+      </div>
+    </header>
 
-<header class="text-center mb-6">
+    <!-- Input y selectores -->
+    <div class="flex flex-col gap-2 mb-4">
+      <input id="taskInput" type="text" placeholder="Escribe una nueva tarea..." class="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none transition" />
+      <div class="flex gap-2">
+        <select id="categorySelector" class="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 appearance-none cursor-pointer transition">
+          <option value="General">General</option>
+          <option value="Trabajo">Trabajo</option>
+          <option value="Estudio">Estudio</option>
+          <option value="Personal">Personal</option>
+        </select>
+        <select id="prioritySelector" class="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 appearance-none cursor-pointer transition">
+          <option value="urgente">Urgente</option>
+          <option value="progreso">En progreso</option>
+          <option value="opcional">Opcional</option>
+        </select>
+        <button id="addBtn" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500 transition">Añadir</button>
+      </div>
+    </div>
 
-<h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-100">
-Gestor de Tareas
-</h1>
+    <!-- Filtros -->
+    <div class="flex gap-2 mb-4 filters">
+      <button data-filter="all" class="flex-1 py-1 rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 transition">Todas</button>
+      <button data-filter="pending" class="flex-1 py-1 rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 transition">Pendientes</button>
+      <button data-filter="completed" class="flex-1 py-1 rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 transition">Completadas</button>
+    </div>
 
-<p class="text-sm text-gray-500 dark:text-gray-300 mb-2">
-Organiza tu día de forma eficiente
-</p>
+    <!-- Lista de tareas -->
+    <ul id="taskList" class="space-y-2 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800 transition"></ul>
 
-<div class="flex justify-center gap-2 mb-2">
+    <!-- Contador -->
+    <div class="text-center mt-4 text-gray-700 dark:text-gray-300">
+      Tareas pendientes: <span id="taskCounter">0</span>
+    </div>
 
-<button id="darkModeBtn"
-class="px-3 py-1 rounded-lg bg-gray-800 text-white hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 transition">
-🌙 Modo noche
-</button>
+    <footer class="text-center mt-6 text-sm text-gray-500 dark:text-gray-400">
+      Arrastra las tareas para reordenarlas
+    </footer>
+  </div>
 
-<select id="themeSelector" class="select-theme">
-<option value="default">Predeterminado</option>
-<option value="warm">Cálido</option>
-<option value="cool">Frío</option>
-</select>
-
-</div>
-</header>
-
-<div class="flex flex-col gap-2 mb-4">
-
-<input
-id="taskInput"
-type="text"
-placeholder="Escribe una nueva tarea..."
-class="input-task"
-/>
-
-<div class="flex gap-2">
-
-<select id="categorySelector" class="select-task">
-<option value="General">General</option>
-<option value="Trabajo">Trabajo</option>
-<option value="Estudio">Estudio</option>
-<option value="Personal">Personal</option>
-</select>
-
-<select id="prioritySelector" class="select-task">
-<option value="urgente">Urgente</option>
-<option value="progreso">En progreso</option>
-<option value="opcional">Opcional</option>
-</select>
-
-<button id="addBtn"
-class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500 transition">
-Añadir
-</button>
-
-</div>
-</div>
-
-<div class="flex gap-2 mb-4 filters">
-
-<button data-filter="all"
-class="flex-1 py-1 rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 transition">
-Todas
-</button>
-
-<button data-filter="pending"
-class="flex-1 py-1 rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 transition">
-Pendientes
-</button>
-
-<button data-filter="completed"
-class="flex-1 py-1 rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 transition">
-Completadas
-</button>
-
-</div>
-
-<ul id="taskList" class="space-y-2"></ul>
-
-<div class="text-center mt-4 text-gray-700 dark:text-gray-300">
-Tareas pendientes: <span id="taskCounter">0</span>
-</div>
-
-<footer class="text-center mt-6 text-sm text-gray-500 dark:text-gray-400">
-Arrastra las tareas para reordenarlas
-</footer>
-
-</div>
-
-<script src="app.js"></script>
-
+  <script src="app.js"></script>
 </body>
 </html>
