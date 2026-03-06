@@ -8,21 +8,21 @@
 
 /* Contenedor */
 .container-day {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255,255,255,0.9);
   color: #111827;
-  transition: all 0.7s ease;
+  transition: all 0.5s ease;
 }
 .container-night {
-  background: rgba(15, 23, 42, 0.95);
+  background: rgba(15,23,42,0.95);
   color: #e5e7eb;
-  transition: all 0.7s ease;
+  transition: all 0.5s ease;
 }
 
-/* Scroll personalizado */
+/* Scroll de tareas */
 #taskList::-webkit-scrollbar { width: 6px; }
 #taskList::-webkit-scrollbar-thumb { background-color: rgba(107,114,128,0.5); border-radius:3px; }
 #taskList::-webkit-scrollbar-thumb:hover { background-color: rgba(107,114,128,0.8); }
 
-/* Animación de tareas al aparecer */
+/* Animación al aparecer */
 .task-item { opacity:0; transform: translateY(10px); transition: all .25s ease; }
 .task-item.show { opacity:1; transform: translateY(0); }

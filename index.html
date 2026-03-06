@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="transition-colors duration-700">
-
+<html lang="es" class="transition-colors duration-500">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,10 +7,9 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="style.css">
 </head>
+<body class="min-h-screen flex items-center justify-center transition-colors duration-500 gradient-day dark:gradient-night">
 
-<body class="min-h-screen flex items-center justify-center transition-colors duration-700 gradient-day dark:gradient-night">
-
-  <div class="w-full max-w-sm p-8 rounded-xl shadow-2xl backdrop-blur transition-colors duration-700 container-day dark:container-night text-gray-900 dark:text-gray-100">
+  <div class="w-full max-w-sm p-8 rounded-xl shadow-2xl container-day dark:container-night transition-colors duration-500">
     <!-- Header -->
     <header class="text-center mb-6">
       <h1 class="text-2xl font-semibold">Gestor de Tareas</h1>
@@ -73,9 +71,6 @@
       Tareas pendientes: <span id="taskCounter">0</span>
     </div>
 
-    <footer class="text-center mt-6 text-sm text-gray-500 dark:text-gray-400">
-      Arrastra las tareas para reordenarlas
-    </footer>
   </div>
 
   <script src="app.js"></script>

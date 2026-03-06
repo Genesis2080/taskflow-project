@@ -7,14 +7,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const categorySelector = document.getElementById("categorySelector")
   const prioritySelector = document.getElementById("prioritySelector")
   const darkModeBtn = document.getElementById("darkModeBtn")
-  const body = document.body
+  const html = document.documentElement
 
   let tasks = JSON.parse(localStorage.getItem("tasks")) || []
   let currentFilter = "all"
 
-  // Inicializar modo oscuro desde localStorage
+  // Inicializar modo oscuro
   if(localStorage.getItem("darkMode") === "true") {
-    body.classList.add("dark")
+    html.classList.add("dark")
   }
 
   function saveTasks() {
@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     filtered.forEach(task => {
       const li = document.createElement("li")
-      li.className = `task-item flex justify-between items-center p-3 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition ${task.completed ? 'line-through opacity-60' : ''}`
+      li.className = `task-item flex justify-between items-center p-3 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition ${task.completed ? 'line-through opacity-60' : ''}`
       li.innerHTML = `
         <div class="flex items-center gap-3">
           <span class="font-medium">${task.text}</span>
@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if(!text) return
     const category = categorySelector.value
     const priority = prioritySelector.value
-    tasks.push({text, category, priority, completed: false})
+    tasks.push({text, category, priority, completed:false})
     taskInput.value = ""
     saveTasks()
     renderTasks()
@@ -78,8 +78,9 @@ document.addEventListener("DOMContentLoaded", () => {
   taskInput.addEventListener("keypress", e => { if(e.key === "Enter") addTask() })
   filterButtons.forEach(btn => { btn.onclick = () => { currentFilter = btn.dataset.filter; renderTasks() } })
 
+  // Botón modo oscuro
   darkModeBtn.addEventListener("click", () => {
-    const isDark = body.classList.toggle("dark")
+    const isDark = html.classList.toggle("dark")
     localStorage.setItem("darkMode", isDark)
   })
 
