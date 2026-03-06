@@ -1,4 +1,3 @@
-// app.js
 document.addEventListener("DOMContentLoaded", () => {
   const taskInput = document.getElementById("taskInput")
   const addBtn = document.getElementById("addBtn")
@@ -9,35 +8,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const prioritySelector = document.getElementById("prioritySelector")
   const darkModeBtn = document.getElementById("darkModeBtn")
   const body = document.body
-  const container = document.querySelector("div.w-full.max-w-sm")
 
-  // Estado inicial de tareas y filtro
   let tasks = JSON.parse(localStorage.getItem("tasks")) || []
   let currentFilter = "all"
 
   // Inicializar modo oscuro desde localStorage
   if(localStorage.getItem("darkMode") === "true") {
     body.classList.add("dark")
-    body.classList.add("gradient-night")
-    body.classList.remove("gradient-day")
-    container.classList.add("container-night")
-    container.classList.remove("container-day")
-  } else {
-    body.classList.add("gradient-day")
-    container.classList.add("container-day")
   }
 
-  // Guardar tareas
   function saveTasks() {
     localStorage.setItem("tasks", JSON.stringify(tasks))
   }
 
-  // Actualizar contador de tareas pendientes
   function updateCounter() {
     taskCounter.textContent = tasks.filter(t => !t.completed).length
   }
 
-  // Renderizar tareas
   function renderTasks() {
     taskList.innerHTML = ""
     let filtered = tasks
@@ -46,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     filtered.forEach(task => {
       const li = document.createElement("li")
-      li.className = `task-item flex justify-between items-center p-3 rounded-lg bg-gray-700 dark:bg-gray-800 text-gray-100 transition ${task.completed ? 'line-through opacity-60' : ''}`
+      li.className = `task-item flex justify-between items-center p-3 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition ${task.completed ? 'line-through opacity-60' : ''}`
       li.innerHTML = `
         <div class="flex items-center gap-3">
           <span class="font-medium">${task.text}</span>
@@ -76,7 +63,6 @@ document.addEventListener("DOMContentLoaded", () => {
     updateCounter()
   }
 
-  // Añadir tarea
   function addTask() {
     const text = taskInput.value.trim()
     if(!text) return
@@ -88,21 +74,14 @@ document.addEventListener("DOMContentLoaded", () => {
     renderTasks()
   }
 
-  // Event listeners
   addBtn.addEventListener("click", addTask)
   taskInput.addEventListener("keypress", e => { if(e.key === "Enter") addTask() })
   filterButtons.forEach(btn => { btn.onclick = () => { currentFilter = btn.dataset.filter; renderTasks() } })
 
-  // Botón de modo oscuro
   darkModeBtn.addEventListener("click", () => {
     const isDark = body.classList.toggle("dark")
-    body.classList.toggle("gradient-night", isDark)
-    body.classList.toggle("gradient-day", !isDark)
-    container.classList.toggle("container-night", isDark)
-    container.classList.toggle("container-day", !isDark)
     localStorage.setItem("darkMode", isDark)
   })
 
-  // Render inicial
   renderTasks()
 })

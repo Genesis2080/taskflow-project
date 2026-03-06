@@ -79,37 +79,5 @@
   </div>
 
   <script src="app.js"></script>
-  <script>
-const darkModeBtn = document.getElementById("darkModeBtn");
-const body = document.body;
-const container = document.querySelector("div.w-full.max-w-sm");
-
-// Inicializar estado desde localStorage
-if(localStorage.getItem("darkMode") === "true") {
-  body.classList.add("dark");
-  body.classList.add("gradient-night");
-  body.classList.remove("gradient-day");
-  container.classList.add("container-night");
-  container.classList.remove("container-day");
-} else {
-  body.classList.add("gradient-day");
-  container.classList.add("container-day");
-}
-
-// Función toggle
-darkModeBtn.addEventListener("click", () => {
-  const isDark = body.classList.toggle("dark");
-
-  // Cambiar gradiente de fondo
-  body.classList.toggle("gradient-night", isDark);
-  body.classList.toggle("gradient-day", !isDark);
-
-  // Cambiar contenedor
-  container.classList.toggle("container-night", isDark);
-  container.classList.toggle("container-day", !isDark);
-
-  localStorage.setItem("darkMode", isDark);
-});
-</script>
 </body>
 </html>
