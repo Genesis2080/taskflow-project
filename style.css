@@ -1,8 +1,30 @@
-/* SCROLL PERSONALIZADO */
+/* Gradientes de fondo según modo */
+.gradient-day {
+  background: linear-gradient(135deg, #fda4af, #c084fc, #818cf8);
+}
+
+.gradient-night {
+  background: linear-gradient(135deg, #020617, #111827, #0f172a);
+}
+
+/* Contenedor con gradiente o semi-transparente */
+.container-day {
+  background: rgba(255, 255, 255, 0.9);
+  color: #111827;
+  transition: all 0.7s ease;
+}
+
+.container-night {
+  background: rgba(15, 23, 42, 0.95);
+  color: #e5e7eb;
+  transition: all 0.7s ease;
+}
+
+/* Scroll personalizado */
 #taskList::-webkit-scrollbar { width: 6px; }
 #taskList::-webkit-scrollbar-thumb { background-color: rgba(107,114,128,0.5); border-radius:3px; }
 #taskList::-webkit-scrollbar-thumb:hover { background-color: rgba(107,114,128,0.8); }
 
-/* ANIMACION DE TAREAS */
-.task-item{ opacity:0; transform:translateY(10px); transition: all .25s ease; }
-.task-item.show{ opacity:1; transform:translateY(0); }
+/* Animación de tareas al aparecer */
+.task-item { opacity:0; transform: translateY(10px); transition: all .25s ease; }
+.task-item.show { opacity:1; transform: translateY(0); }
