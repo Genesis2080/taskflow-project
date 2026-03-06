@@ -1,39 +1,49 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const taskInput = document.getElementById("taskInput")
-  const addBtn = document.getElementById("addBtn")
-  const taskList = document.getElementById("taskList")
-  const taskCounter = document.getElementById("taskCounter")
-  const filterButtons = document.querySelectorAll(".filters button")
-  const categorySelector = document.getElementById("categorySelector")
-  const prioritySelector = document.getElementById("prioritySelector")
-  const darkModeBtn = document.getElementById("darkModeBtn")
-  const html = document.documentElement
+  const taskInput = document.getElementById("taskInput");
+  const addBtn = document.getElementById("addBtn");
+  const taskList = document.getElementById("taskList");
+  const taskCounter = document.getElementById("taskCounter");
+  const filterButtons = document.querySelectorAll(".filters button");
+  const categorySelector = document.getElementById("categorySelector");
+  const prioritySelector = document.getElementById("prioritySelector");
+  const darkModeBtn = document.getElementById("darkModeBtn");
+  const html = document.documentElement;
 
-  let tasks = JSON.parse(localStorage.getItem("tasks")) || []
-  let currentFilter = "all"
+  let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  let currentFilter = "all";
 
-  // Inicializar modo oscuro
+  // Inicializar modo oscuro según localStorage
   if(localStorage.getItem("darkMode") === "true") {
-    html.classList.add("dark")
+    html.classList.add("dark");
   }
 
+  // Guardar tareas en localStorage
   function saveTasks() {
-    localStorage.setItem("tasks", JSON.stringify(tasks))
+    localStorage.setItem("tasks", JSON.stringify(tasks));
   }
 
+  // Actualizar contador de tareas pendientes
   function updateCounter() {
-    taskCounter.textContent = tasks.filter(t => !t.completed).length
+    taskCounter.textContent = tasks.filter(t => !t.completed).length;
   }
 
+  // Actualizar botón de filtro activo
+  function updateActiveFilter() {
+    filterButtons.forEach(btn => btn.classList.remove("filter-active"));
+    const activeBtn = Array.from(filterButtons).find(btn => btn.dataset.filter === currentFilter);
+    if(activeBtn) activeBtn.classList.add("filter-active");
+  }
+
+  // Renderizar tareas en la lista
   function renderTasks() {
-    taskList.innerHTML = ""
-    let filtered = tasks
-    if(currentFilter === "pending") filtered = tasks.filter(t => !t.completed)
-    if(currentFilter === "completed") filtered = tasks.filter(t => t.completed)
+    taskList.innerHTML = "";
+    let filtered = tasks;
+    if(currentFilter === "pending") filtered = tasks.filter(t => !t.completed);
+    if(currentFilter === "completed") filtered = tasks.filter(t => t.completed);
 
     filtered.forEach(task => {
-      const li = document.createElement("li")
-      li.className = `task-item flex justify-between items-center p-3 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition ${task.completed ? 'line-through opacity-60' : ''}`
+      const li = document.createElement("li");
+      li.className = `task-item flex justify-between items-center p-3 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition ${task.completed ? 'line-through opacity-60' : ''}`;
       li.innerHTML = `
         <div class="flex items-center gap-3">
           <span class="font-medium">${task.text}</span>
@@ -47,42 +57,58 @@ document.addEventListener("DOMContentLoaded", () => {
           <button class="complete-btn px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 dark:bg-green-400 dark:hover:bg-green-500 transition">✔</button>
           <button class="delete-btn px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 dark:bg-red-400 dark:hover:bg-red-500 transition">✖</button>
         </div>
-      `
+      `;
+      // Completar tarea
       li.querySelector(".complete-btn").onclick = () => {
-        task.completed = !task.completed
-        saveTasks()
-        renderTasks()
-      }
+        task.completed = !task.completed;
+        saveTasks();
+        renderTasks();
+      };
+      // Eliminar tarea
       li.querySelector(".delete-btn").onclick = () => {
-        tasks.splice(tasks.indexOf(task), 1)
-        saveTasks()
-        renderTasks()
-      }
-      taskList.appendChild(li)
-    })
-    updateCounter()
+        tasks.splice(tasks.indexOf(task), 1);
+        saveTasks();
+        renderTasks();
+      };
+      taskList.appendChild(li);
+      // Aplicar animación de aparición
+      setTimeout(() => li.classList.add("show"), 10);
+    });
+
+    updateCounter();
   }
 
+  // Añadir nueva tarea
   function addTask() {
-    const text = taskInput.value.trim()
-    if(!text) return
-    const category = categorySelector.value
-    const priority = prioritySelector.value
-    tasks.push({text, category, priority, completed:false})
-    taskInput.value = ""
-    saveTasks()
-    renderTasks()
+    const text = taskInput.value.trim();
+    if(!text) return;
+    const category = categorySelector.value;
+    const priority = prioritySelector.value;
+    tasks.push({text, category, priority, completed: false});
+    taskInput.value = "";
+    saveTasks();
+    renderTasks();
   }
 
-  addBtn.addEventListener("click", addTask)
-  taskInput.addEventListener("keypress", e => { if(e.key === "Enter") addTask() })
-  filterButtons.forEach(btn => { btn.onclick = () => { currentFilter = btn.dataset.filter; renderTasks() } })
+  // Eventos
+  addBtn.addEventListener("click", addTask);
+  taskInput.addEventListener("keypress", e => { if(e.key === "Enter") addTask(); });
 
-  // Botón de modo oscuro
+  filterButtons.forEach(btn => {
+    btn.onclick = () => {
+      currentFilter = btn.dataset.filter;
+      renderTasks();
+      updateActiveFilter();
+    };
+  });
+
+  // Botón modo oscuro
   darkModeBtn.addEventListener("click", () => {
-    const isDark = html.classList.toggle("dark")
-    localStorage.setItem("darkMode", isDark)
-  })
+    const isDark = html.classList.toggle("dark");
+    localStorage.setItem("darkMode", isDark);
+  });
 
-  renderTasks()
-})
+  // Render inicial
+  renderTasks();
+  updateActiveFilter();
+});

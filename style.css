@@ -40,3 +40,14 @@
   opacity: 1;
   transform: translateY(0);
 }
+
+/* Filtro activo */
+button.filter-active {
+  @apply bg-blue-500 text-white dark:bg-blue-600 dark:text-white;
+}
+
+/* Hover en tarea */
+.task-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
