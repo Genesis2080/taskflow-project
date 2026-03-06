@@ -11,9 +11,9 @@ const prioritySelector = document.getElementById("prioritySelector")
 let tasks = JSON.parse(localStorage.getItem("tasks")) || []
 let currentFilter = "all"
 
-/* =========================
-Guardar preferencias
-========================= */
+/* =======================
+PREFERENCIAS
+======================= */
 
 const savedTheme = localStorage.getItem("theme")
 const savedDark = localStorage.getItem("darkMode")
@@ -24,13 +24,14 @@ document.body.classList.add(`theme-${savedTheme}`)
 themeSelector.value = savedTheme
 }
 
-if(savedDark === "true"){
+if(savedDark==="true"){
 document.documentElement.classList.add("dark")
+document.body.classList.add("theme-night")
 }
 
-/* =========================
-Funciones tareas
-========================= */
+/* =======================
+FUNCIONES
+======================= */
 
 function saveTasks(){
 localStorage.setItem("tasks", JSON.stringify(tasks))
@@ -39,6 +40,10 @@ localStorage.setItem("tasks", JSON.stringify(tasks))
 function updateCounter(){
 taskCounter.textContent = tasks.filter(t=>!t.completed).length
 }
+
+/* =======================
+RENDER
+======================= */
 
 function renderTasks(){
 
@@ -49,14 +54,24 @@ let filtered = tasks
 if(currentFilter==="pending") filtered=tasks.filter(t=>!t.completed)
 if(currentFilter==="completed") filtered=tasks.filter(t=>t.completed)
 
-filtered.forEach(task=>{
+filtered.forEach((task,index)=>{
 
 const li=document.createElement("li")
 
-li.className=`flex justify-between items-center p-3 rounded-lg
+li.draggable=true
+li.dataset.index=index
+
+li.className=`task-item flex justify-between items-center p-3 rounded-lg
 bg-gray-100 dark:bg-gray-700
 transition
 ${task.completed?'line-through opacity-60':''}`
+
+const categoryColors={
+Trabajo:"bg-blue-500",
+Estudio:"bg-purple-500",
+Personal:"bg-green-500",
+General:"bg-gray-500"
+}
 
 li.innerHTML=`
 
@@ -66,9 +81,7 @@ li.innerHTML=`
 ${task.text}
 </span>
 
-<span class="px-2 py-1 text-xs rounded
-bg-blue-200 text-blue-800
-dark:bg-blue-600 dark:text-white">
+<span class="px-2 py-1 text-xs text-white rounded ${categoryColors[task.category] || 'bg-gray-500'}">
 ${task.category}
 </span>
 
@@ -85,11 +98,11 @@ ${task.priority==='urgente'?'Urgente':task.priority==='progreso'?'En progreso':'
 
 <div class="flex gap-2">
 
-<button class="complete-btn px-2 py-1 rounded bg-green-500 text-white hover:bg-green-600 dark:bg-green-400 dark:hover:bg-green-500 transition">
+<button class="complete-btn px-2 py-1 rounded bg-green-500 text-white hover:bg-green-600 transition">
 ✔
 </button>
 
-<button class="delete-btn px-2 py-1 rounded bg-red-500 text-white hover:bg-red-600 dark:bg-red-400 dark:hover:bg-red-500 transition">
+<button class="delete-btn px-2 py-1 rounded bg-red-500 text-white hover:bg-red-600 transition">
 ✖
 </button>
 
@@ -103,34 +116,71 @@ renderTasks()
 }
 
 li.querySelector(".delete-btn").onclick=()=>{
-tasks.splice(tasks.indexOf(task),1)
+tasks.splice(index,1)
 saveTasks()
 renderTasks()
 }
 
+/* Drag events */
+
+li.addEventListener("dragstart",dragStart)
+li.addEventListener("dragover",dragOver)
+li.addEventListener("drop",dropItem)
+
 taskList.appendChild(li)
+
+/* Animación */
+
+setTimeout(()=>{
+li.classList.add("show")
+},50)
 
 })
 
 updateCounter()
+
 }
 
-/* =========================
-Añadir tarea
-========================= */
+/* =======================
+DRAG & DROP
+======================= */
+
+let draggedIndex=null
+
+function dragStart(e){
+draggedIndex=this.dataset.index
+}
+
+function dragOver(e){
+e.preventDefault()
+}
+
+function dropItem(){
+
+const targetIndex=this.dataset.index
+
+const draggedTask=tasks.splice(draggedIndex,1)[0]
+
+tasks.splice(targetIndex,0,draggedTask)
+
+saveTasks()
+renderTasks()
+
+}
+
+/* =======================
+AÑADIR
+======================= */
 
 function addTask(){
 
 const text=taskInput.value.trim()
 if(!text) return
 
-const category=categorySelector.value
-const priority=prioritySelector.value
-
 tasks.push({
 text,
-category,
-priority,
+category:categorySelector.value,
+priority:prioritySelector.value,
 completed:false
 })
 
@@ -147,9 +197,9 @@ taskInput.addEventListener("keypress", e=>{
 if(e.key==="Enter") addTask()
 })
 
-/* =========================
-Filtros
-========================= */
+/* =======================
+FILTROS
+======================= */
 
 filterButtons.forEach(btn=>{
 btn.onclick=()=>{
@@ -158,40 +208,35 @@ renderTasks()
 }
 })
 
-/* =========================
-Modo oscuro global
-========================= */
+/* =======================
+MODO NOCHE GLOBAL
+======================= */
 
 darkModeBtn.onclick=()=>{
 
 document.documentElement.classList.toggle("dark")
+document.body.classList.toggle("theme-night")
 
-const darkActive = document.documentElement.classList.contains("dark")
+const darkActive=document.documentElement.classList.contains("dark")
 
-localStorage.setItem("darkMode", darkActive)
-
-}
-
-/* =========================
-Cambio de tema
-========================= */
-
-themeSelector.onchange = e=>{
-
-const theme = e.target.value
-
-document.body.classList.remove(
-"theme-default",
-"theme-warm",
-"theme-cool"
-)
-
-document.body.classList.add(`theme-${theme}`)
-
-localStorage.setItem("theme", theme)
+localStorage.setItem("darkMode",darkActive)
 
 }
 
-/* ========================= */
+/* =======================
+CAMBIO TEMA
+======================= */
+
+themeSelector.onchange=e=>{
+
+if(document.documentElement.classList.contains("dark")) return
+
+document.body.classList.remove("theme-default","theme-warm","theme-cool")
+
+document.body.classList.add(`theme-${e.target.value}`)
+
+localStorage.setItem("theme",e.target.value)
+
+}
 
 renderTasks()
