@@ -8,6 +8,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const prioritySelector = document.getElementById("prioritySelector");
   const darkModeBtn = document.getElementById("darkModeBtn");
   const html = document.documentElement;
+  const body = document.body;
+  const container = document.querySelector(".container-day, .container-night");
 
   let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
   let currentFilter = "all";
@@ -15,26 +17,26 @@ document.addEventListener("DOMContentLoaded", () => {
   // Inicializar modo oscuro según localStorage
   if(localStorage.getItem("darkMode") === "true") {
     html.classList.add("dark");
+    body.classList.replace("bg-day", "bg-night");
+    container.classList.replace("container-day", "container-night");
   }
 
-  // Guardar tareas en localStorage
   function saveTasks() {
     localStorage.setItem("tasks", JSON.stringify(tasks));
   }
 
-  // Actualizar contador de tareas pendientes
   function updateCounter() {
     taskCounter.textContent = tasks.filter(t => !t.completed).length;
   }
 
-  // Actualizar botón de filtro activo
   function updateActiveFilter() {
-    filterButtons.forEach(btn => btn.classList.remove("filter-active"));
+    filterButtons.forEach(btn => btn.classList.remove("bg-blue-500", "text-white", "dark:bg-blue-600"));
     const activeBtn = Array.from(filterButtons).find(btn => btn.dataset.filter === currentFilter);
-    if(activeBtn) activeBtn.classList.add("filter-active");
+    if(activeBtn) {
+      activeBtn.classList.add("bg-blue-500", "text-white", "dark:bg-blue-600");
+    }
   }
 
-  // Renderizar tareas en la lista
   function renderTasks() {
     taskList.innerHTML = "";
     let filtered = tasks;
@@ -58,27 +60,23 @@ document.addEventListener("DOMContentLoaded", () => {
           <button class="delete-btn px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 dark:bg-red-400 dark:hover:bg-red-500 transition">✖</button>
         </div>
       `;
-      // Completar tarea
       li.querySelector(".complete-btn").onclick = () => {
         task.completed = !task.completed;
         saveTasks();
         renderTasks();
       };
-      // Eliminar tarea
       li.querySelector(".delete-btn").onclick = () => {
         tasks.splice(tasks.indexOf(task), 1);
         saveTasks();
         renderTasks();
       };
       taskList.appendChild(li);
-      // Aplicar animación de aparición
       setTimeout(() => li.classList.add("show"), 10);
     });
 
     updateCounter();
   }
 
-  // Añadir nueva tarea
   function addTask() {
     const text = taskInput.value.trim();
     if(!text) return;
@@ -90,7 +88,6 @@ document.addEventListener("DOMContentLoaded", () => {
     renderTasks();
   }
 
-  // Eventos
   addBtn.addEventListener("click", addTask);
   taskInput.addEventListener("keypress", e => { if(e.key === "Enter") addTask(); });
 
@@ -102,10 +99,19 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   });
 
-  // Botón modo oscuro
+  // BOTÓN MODO OSCURO FUNCIONAL
   darkModeBtn.addEventListener("click", () => {
     const isDark = html.classList.toggle("dark");
     localStorage.setItem("darkMode", isDark);
+
+    // Cambiar clases del body y contenedor
+    if(isDark) {
+      body.classList.replace("bg-day", "bg-night");
+      container.classList.replace("container-day", "container-night");
+    } else {
+      body.classList.replace("bg-night", "bg-day");
+      container.classList.replace("container-night", "container-day");
+    }
   });
 
   // Render inicial
