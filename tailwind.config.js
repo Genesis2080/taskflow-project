@@ -1,28 +1,24 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./index.html",
-    "./app.js"
-  ],
-  darkMode: 'class', // Modo oscuro controlado por la clase "dark"
+  content: ["./index.html", "./app.js"],
+  darkMode: "class", // Modo oscuro controlado por la clase "dark"
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Poppins', 'sans-serif'],
+        sans: ["Poppins", "sans-serif"],
       },
       colors: {
-        // Colores de fondo y gradiente
-        'day-start': '#fda4af',
-        'day-middle': '#c084fc',
-        'day-end': '#818cf8',
-        'night-start': '#020617',
-        'night-middle': '#111827',
-        'night-end': '#0f172a',
+        dayStart: "#fdf6e3",
+        dayMiddle: "#fdd9b5",
+        dayEnd: "#f9c5a1",
+        nightStart: "#1e293b",
+        nightMiddle: "#111827",
+        nightEnd: "#0f172a",
       },
       maxWidth: {
-        'gestor': '24rem',
+        gestor: "24rem",
       },
     },
   },
   plugins: [],
-}
+};

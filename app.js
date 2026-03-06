@@ -78,7 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
   taskInput.addEventListener("keypress", e => { if(e.key === "Enter") addTask() })
   filterButtons.forEach(btn => { btn.onclick = () => { currentFilter = btn.dataset.filter; renderTasks() } })
 
-  // Botón modo oscuro
+  // Botón de modo oscuro
   darkModeBtn.addEventListener("click", () => {
     const isDark = html.classList.toggle("dark")
     localStorage.setItem("darkMode", isDark)
