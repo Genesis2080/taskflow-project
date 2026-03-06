@@ -137,3 +137,73 @@ background-image:url('data:image/svg+xml;utf8,<svg fill="none" stroke="%23ffffff
 border-color:#3b82f6;
 box-shadow:0 0 0 2px rgba(59,130,246,.5);
 }
+
+/* ========================= */
+/* TRANSICIONES DE TEMA */
+/* ========================= */
+
+body,
+.container,
+input,
+select,
+button {
+transition:
+background-color 0.6s ease,
+color 0.6s ease,
+border-color 0.6s ease,
+box-shadow 0.6s ease;
+}
+
+/* ========================= */
+/* CONTENEDOR SEGÚN TEMA */
+/* ========================= */
+
+.theme-container{
+background:rgba(255,255,255,0.85);
+color:#111827;
+}
+
+/* Tema cálido */
+
+body.theme-warm .theme-container{
+background:rgba(255,245,230,0.9);
+}
+
+/* Tema frío */
+
+body.theme-cool .theme-container{
+background:rgba(230,240,255,0.9);
+}
+
+/* ========================= */
+/* TEMA NOCHE */
+/* ========================= */
+
+body.theme-night{
+--bg-gradient-start:#020617;
+--bg-gradient-middle:#020617;
+--bg-gradient-end:#0f172a;
+}
+
+body.theme-night .theme-container{
+background:rgba(15,23,42,0.95);
+color:#e5e7eb;
+box-shadow:0 20px 40px rgba(0,0,0,0.6);
+}
+
+/* inputs modo noche */
+
+body.theme-night .input-task{
+background:#1e293b;
+color:white;
+border-color:#334155;
+}
+
+/* selects modo noche */
+
+body.theme-night .select-task,
+body.theme-night .select-theme{
+background:#1e293b;
+color:white;
+border-color:#334155;
+}
