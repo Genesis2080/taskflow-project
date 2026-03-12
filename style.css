@@ -27,6 +27,7 @@ body {
 
 /* ─── Tipografía de cabecera ────────────────────────────────── */
 .brand { font-family: 'Syne', sans-serif; letter-spacing: -0.03em; }
+.dark .brand { color: #e0e7ff; }
 
 /* ─── Inputs & selects ──────────────────────────────────────── */
 .field {
