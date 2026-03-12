@@ -11,7 +11,7 @@
     /* ─── Reset & base ─────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; }
     html { font-family: 'DM Sans', sans-serif; }
- 
+
     /* ─── Gradientes de fondo ───────────────────────────────────── */
     body {
       background: linear-gradient(135deg, #fdf6e3 0%, #fdd9b5 50%, #f9c5a1 100%);
@@ -20,7 +20,7 @@
     .dark body {
       background: linear-gradient(135deg, #0f172a 0%, #111827 50%, #1e293b 100%);
     }
- 
+
     /* ─── Contenedor principal ──────────────────────────────────── */
     .card {
       background: rgba(255,255,255,0.92);
@@ -34,10 +34,11 @@
       border: 1px solid rgba(255,255,255,0.06);
       box-shadow: 0 20px 60px rgba(0,0,0,0.5);
     }
- 
+
     /* ─── Tipografía de cabecera ────────────────────────────────── */
     .brand { font-family: 'Syne', sans-serif; letter-spacing: -0.03em; }
- 
+    .dark .brand { color: #e0e7ff; }
+
     /* ─── Inputs & selects ──────────────────────────────────────── */
     .field {
       padding: .55rem .85rem;
@@ -56,7 +57,7 @@
     .field.error { border-color: #ef4444; }
     .field-error-msg { color: #ef4444; font-size: .75rem; margin-top: .2rem; display: none; }
     .field.error + .field-error-msg { display: block; }
- 
+
     /* ─── Botones de acción ─────────────────────────────────────── */
     .btn-primary {
       background: #6366f1;
@@ -72,7 +73,7 @@
     }
     .btn-primary:hover { background: #4f46e5; }
     .btn-primary:active { transform: scale(.97); }
- 
+
     /* ─── Filtros ───────────────────────────────────────────────── */
     .filter-btn {
       flex: 1;
@@ -93,7 +94,7 @@
       border-color: #6366f1;
     }
     .dark .filter-btn.active { background: #818cf8; border-color: #818cf8; color: #0f172a; }
- 
+
     /* ─── Items de tarea ────────────────────────────────────────── */
     .task-item {
       display: flex;
@@ -114,7 +115,7 @@
     .dark .task-item:hover { border-color: #4f46e5; }
     .task-item.done { opacity: .5; }
     .task-item.done .task-text { text-decoration: line-through; }
- 
+
     /* ─── Badges ────────────────────────────────────────────────── */
     .badge {
       display: inline-flex;
@@ -133,7 +134,7 @@
     .dark .badge-urgent   { background: #7f1d1d; color: #fca5a5; }
     .dark .badge-progress { background: #78350f; color: #fde68a; }
     .dark .badge-optional { background: #14532d; color: #86efac; }
- 
+
     /* ─── Botones de tarea (✔ ✖) ────────────────────────────────── */
     .task-action {
       padding: .25rem .55rem;
@@ -153,12 +154,12 @@
     .dark .btn-complete:hover { background: #065f46; }
     .dark .btn-delete  { background: #7f1d1d; color: #fca5a5; }
     .dark .btn-delete:hover  { background: #991b1b; }
- 
+
     /* ─── Scrollbar ─────────────────────────────────────────────── */
     #taskList { scrollbar-width: thin; scrollbar-color: #94a3b8 transparent; }
     #taskList::-webkit-scrollbar { width: 5px; }
     #taskList::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
- 
+
     /* ─── Dark-mode toggle ──────────────────────────────────────── */
     .toggle-pill {
       display: flex; align-items: center; gap: .4rem;
@@ -174,7 +175,7 @@
     }
     .dark .toggle-pill { background: #1e293b; color: #94a3b8; border-color: #334155; }
     .toggle-pill:hover { border-color: #6366f1; color: #6366f1; }
- 
+
     /* ─── Estado vacío ──────────────────────────────────────────── */
     .empty-state {
       text-align: center;
@@ -183,7 +184,7 @@
       font-size: .875rem;
     }
     .empty-state .emoji { font-size: 2rem; display: block; margin-bottom: .5rem; }
- 
+
     /* ─── Contador badge ────────────────────────────────────────── */
     .counter-chip {
       display: inline-flex;
@@ -200,13 +201,13 @@
   </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
- 
+
   <div class="card w-full max-w-sm p-6 rounded-2xl">
- 
+
     <!-- ── Cabecera ─────────────────────────────────────────────── -->
     <header class="mb-5">
       <div class="flex items-center justify-between mb-1">
-        <h1 class="brand text-2xl text-gray-900 dark:text-gray-500">TaskFlow</h1>
+        <h1 class="brand text-2xl text-gray-900 dark:text-white">TaskFlow</h1>
         <button id="darkModeBtn" class="toggle-pill" aria-label="Cambiar tema">
           <span id="darkIcon">🌙</span>
           <span id="darkLabel">Noche</span>
@@ -214,17 +215,17 @@
       </div>
       <p class="text-xs text-gray-500 dark:text-gray-400">Organiza tu día de forma eficiente</p>
     </header>
- 
+
     <!-- ── Formulario de nueva tarea ────────────────────────────── -->
     <section aria-label="Añadir tarea" class="flex flex-col gap-2 mb-4">
- 
+
       <div>
         <input id="taskInput" type="text" maxlength="120"
           placeholder="¿Qué tienes que hacer hoy?"
           class="field" aria-label="Nombre de la tarea" autocomplete="off" />
         <p class="field-error-msg" id="inputError">El nombre de la tarea no puede estar vacío.</p>
       </div>
- 
+
       <div class="flex gap-2">
         <select id="categorySelector" class="field" aria-label="Categoría">
           <option value="General">📋 General</option>
@@ -232,28 +233,28 @@
           <option value="Estudio">📚 Estudio</option>
           <option value="Personal">🏠 Personal</option>
         </select>
- 
+
         <select id="prioritySelector" class="field" aria-label="Prioridad">
           <option value="urgent">🔴 Urgente</option>
           <option value="progress">🟡 En progreso</option>
           <option value="optional">🟢 Opcional</option>
         </select>
       </div>
- 
+
       <button id="addBtn" class="btn-primary">+ Añadir tarea</button>
     </section>
- 
+
     <!-- ── Filtros ───────────────────────────────────────────────── -->
     <nav aria-label="Filtros de tareas" class="flex gap-2 mb-4">
       <button class="filter-btn active" data-filter="all">Todas</button>
       <button class="filter-btn" data-filter="pending">Pendientes</button>
       <button class="filter-btn" data-filter="completed">Completadas</button>
     </nav>
- 
+
     <!-- ── Lista de tareas ───────────────────────────────────────── -->
     <ul id="taskList" role="list" aria-label="Lista de tareas"
         class="space-y-2 max-h-72 overflow-y-auto pr-0.5"></ul>
- 
+
     <!-- ── Contador ──────────────────────────────────────────────── -->
     <footer class="flex justify-center mt-4">
       <div class="counter-chip">
@@ -262,9 +263,9 @@
         <span>pendiente(s)</span>
       </div>
     </footer>
- 
+
   </div>
- 
+
   <script src="app.js"></script>
 </body>
 </html>
