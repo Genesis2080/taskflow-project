@@ -1,77 +1,268 @@
+Index · HTML
+Copiar
+
 <!DOCTYPE html>
 <html lang="es" class="transition-colors duration-500">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestor de Tareas</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskFlow – Gestor de Tareas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Reset & base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; }
+    html { font-family: 'DM Sans', sans-serif; }
+ 
+    /* ─── Gradientes de fondo ───────────────────────────────────── */
+    .bg-day   { background: linear-gradient(135deg, #fdf6e3 0%, #fdd9b5 50%, #f9c5a1 100%); }
+    .bg-night { background: linear-gradient(135deg, #0f172a 0%, #111827 50%, #1e293b 100%); }
+ 
+    /* ─── Contenedor principal ──────────────────────────────────── */
+    .card {
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.6);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+      transition: background .5s ease, border .5s ease, box-shadow .5s ease;
+    }
+    .dark .card {
+      background: rgba(15,23,42,0.94);
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+ 
+    /* ─── Tipografía de cabecera ────────────────────────────────── */
+    .brand { font-family: 'Syne', sans-serif; letter-spacing: -0.03em; }
+ 
+    /* ─── Inputs & selects ──────────────────────────────────────── */
+    .field {
+      padding: .55rem .85rem;
+      border-radius: .6rem;
+      border: 1.5px solid #d1d5db;
+      background: #fff;
+      color: #111827;
+      font-size: .875rem;
+      font-family: inherit;
+      transition: border-color .2s, box-shadow .2s, background .3s, color .3s;
+      width: 100%;
+    }
+    .field:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.18); }
+    .dark .field { background: #1e293b; border-color: #334155; color: #f1f5f9; }
+    .dark .field:focus { border-color: #818cf8; box-shadow: 0 0 0 3px rgba(129,140,248,.18); }
+    .field.error { border-color: #ef4444; }
+    .field-error-msg { color: #ef4444; font-size: .75rem; margin-top: .2rem; display: none; }
+    .field.error + .field-error-msg { display: block; }
+ 
+    /* ─── Botones de acción ─────────────────────────────────────── */
+    .btn-primary {
+      background: #6366f1;
+      color: #fff;
+      padding: .55rem 1.1rem;
+      border-radius: .6rem;
+      font-weight: 600;
+      font-size: .875rem;
+      border: none;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+      white-space: nowrap;
+    }
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-primary:active { transform: scale(.97); }
+ 
+    /* ─── Filtros ───────────────────────────────────────────────── */
+    .filter-btn {
+      flex: 1;
+      padding: .4rem .5rem;
+      border-radius: .55rem;
+      font-size: .8rem;
+      font-weight: 500;
+      border: 1.5px solid transparent;
+      background: #f1f5f9;
+      color: #64748b;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .dark .filter-btn { background: #1e293b; color: #94a3b8; }
+    .filter-btn.active {
+      background: #6366f1;
+      color: #fff;
+      border-color: #6366f1;
+    }
+    .dark .filter-btn.active { background: #818cf8; border-color: #818cf8; color: #0f172a; }
+ 
+    /* ─── Items de tarea ────────────────────────────────────────── */
+    .task-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: .75rem;
+      padding: .75rem 1rem;
+      border-radius: .65rem;
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .25s ease, transform .25s ease, box-shadow .2s, border-color .2s;
+    }
+    .dark .task-item { background: #1e293b; border-color: #334155; color: #f1f5f9; }
+    .task-item.show { opacity: 1; transform: translateY(0); }
+    .task-item:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); border-color: #c7d2fe; }
+    .dark .task-item:hover { border-color: #4f46e5; }
+    .task-item.done { opacity: .5; }
+    .task-item.done .task-text { text-decoration: line-through; }
+ 
+    /* ─── Badges ────────────────────────────────────────────────── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: .15rem .55rem;
+      border-radius: 99px;
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: .02em;
+    }
+    .badge-cat  { background: #e0e7ff; color: #4338ca; }
+    .dark .badge-cat { background: #312e81; color: #c7d2fe; }
+    .badge-urgent   { background: #fee2e2; color: #b91c1c; }
+    .badge-progress { background: #fef9c3; color: #92400e; }
+    .badge-optional { background: #dcfce7; color: #166534; }
+    .dark .badge-urgent   { background: #7f1d1d; color: #fca5a5; }
+    .dark .badge-progress { background: #78350f; color: #fde68a; }
+    .dark .badge-optional { background: #14532d; color: #86efac; }
+ 
+    /* ─── Botones de tarea (✔ ✖) ────────────────────────────────── */
+    .task-action {
+      padding: .25rem .55rem;
+      border-radius: .45rem;
+      font-size: .8rem;
+      border: none;
+      cursor: pointer;
+      transition: background .15s, transform .1s;
+      flex-shrink: 0;
+    }
+    .task-action:active { transform: scale(.93); }
+    .btn-complete { background: #d1fae5; color: #065f46; }
+    .btn-complete:hover { background: #6ee7b7; }
+    .btn-delete  { background: #fee2e2; color: #991b1b; }
+    .btn-delete:hover  { background: #fca5a5; }
+    .dark .btn-complete { background: #064e3b; color: #6ee7b7; }
+    .dark .btn-complete:hover { background: #065f46; }
+    .dark .btn-delete  { background: #7f1d1d; color: #fca5a5; }
+    .dark .btn-delete:hover  { background: #991b1b; }
+ 
+    /* ─── Scrollbar ─────────────────────────────────────────────── */
+    #taskList { scrollbar-width: thin; scrollbar-color: #94a3b8 transparent; }
+    #taskList::-webkit-scrollbar { width: 5px; }
+    #taskList::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
+ 
+    /* ─── Dark-mode toggle ──────────────────────────────────────── */
+    .toggle-pill {
+      display: flex; align-items: center; gap: .4rem;
+      padding: .35rem .85rem;
+      border-radius: 99px;
+      background: #f1f5f9;
+      color: #475569;
+      font-size: .8rem;
+      font-weight: 500;
+      border: 1.5px solid #e2e8f0;
+      cursor: pointer;
+      transition: all .25s;
+    }
+    .dark .toggle-pill { background: #1e293b; color: #94a3b8; border-color: #334155; }
+    .toggle-pill:hover { border-color: #6366f1; color: #6366f1; }
+ 
+    /* ─── Estado vacío ──────────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: #94a3b8;
+      font-size: .875rem;
+    }
+    .empty-state .emoji { font-size: 2rem; display: block; margin-bottom: .5rem; }
+ 
+    /* ─── Contador badge ────────────────────────────────────────── */
+    .counter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      background: #e0e7ff;
+      color: #4338ca;
+      padding: .25rem .75rem;
+      border-radius: 99px;
+      font-size: .8rem;
+      font-weight: 600;
+    }
+    .dark .counter-chip { background: #312e81; color: #c7d2fe; }
+  </style>
 </head>
-<body class="min-h-screen flex items-center justify-center transition-colors duration-500 bg-day dark:bg-night">
-
-  <div class="w-full max-w-sm p-8 rounded-xl shadow-2xl container-day dark:container-night transition-colors duration-500">
-    <!-- Header -->
-    <header class="text-center mb-6">
-      <h1 class="text-2xl font-semibold">Gestor de Tareas</h1>
-      <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">Organiza tu día de forma eficiente</p>
-      <div class="flex justify-center gap-2 mb-2">
-        <button id="darkModeBtn"
-          class="px-3 py-1 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
-          🌙 Modo noche
+<body class="min-h-screen flex items-center justify-center p-4 transition-colors duration-500 bg-day dark:bg-night">
+ 
+  <div class="card w-full max-w-sm p-6 rounded-2xl">
+ 
+    <!-- ── Cabecera ─────────────────────────────────────────────── -->
+    <header class="mb-5">
+      <div class="flex items-center justify-between mb-1">
+        <h1 class="brand text-2xl text-gray-900 dark:text-gray-50">TaskFlow</h1>
+        <button id="darkModeBtn" class="toggle-pill" aria-label="Cambiar tema">
+          <span id="darkIcon">🌙</span>
+          <span id="darkLabel">Noche</span>
         </button>
       </div>
+      <p class="text-xs text-gray-500 dark:text-gray-400">Organiza tu día de forma eficiente</p>
     </header>
-
-    <!-- Input y selectores -->
-    <div class="flex flex-col gap-2 mb-4">
-      <input id="taskInput" type="text" placeholder="Escribe una nueva tarea..."
-        class="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none transition" />
-      <div class="flex gap-2">
-        <select id="categorySelector"
-          class="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 appearance-none cursor-pointer transition">
-          <option value="General">General</option>
-          <option value="Trabajo">Trabajo</option>
-          <option value="Estudio">Estudio</option>
-          <option value="Personal">Personal</option>
-        </select>
-        <select id="prioritySelector"
-          class="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 appearance-none cursor-pointer transition">
-          <option value="urgente">Urgente</option>
-          <option value="progreso">En progreso</option>
-          <option value="opcional">Opcional</option>
-        </select>
-        <button id="addBtn"
-          class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500 transition">
-          Añadir
-        </button>
+ 
+    <!-- ── Formulario de nueva tarea ────────────────────────────── -->
+    <section aria-label="Añadir tarea" class="flex flex-col gap-2 mb-4">
+ 
+      <div>
+        <input id="taskInput" type="text" maxlength="120"
+          placeholder="¿Qué tienes que hacer hoy?"
+          class="field" aria-label="Nombre de la tarea" autocomplete="off" />
+        <p class="field-error-msg" id="inputError">El nombre de la tarea no puede estar vacío.</p>
       </div>
-    </div>
-
-    <!-- Filtros -->
-    <div class="flex gap-2 mb-4 filters">
-      <button data-filter="all"
-        class="flex-1 py-1 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
-        Todas
-      </button>
-      <button data-filter="pending"
-        class="flex-1 py-1 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
-        Pendientes
-      </button>
-      <button data-filter="completed"
-        class="flex-1 py-1 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
-        Completadas
-      </button>
-    </div>
-
-    <!-- Lista de tareas -->
-    <ul id="taskList" class="space-y-2 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-200 dark:scrollbar-track-gray-800 transition"></ul>
-
-    <!-- Contador -->
-    <div class="text-center mt-4 text-gray-700 dark:text-gray-300">
-      Tareas pendientes: <span id="taskCounter">0</span>
-    </div>
+ 
+      <div class="flex gap-2">
+        <select id="categorySelector" class="field" aria-label="Categoría">
+          <option value="General">📋 General</option>
+          <option value="Trabajo">💼 Trabajo</option>
+          <option value="Estudio">📚 Estudio</option>
+          <option value="Personal">🏠 Personal</option>
+        </select>
+ 
+        <select id="prioritySelector" class="field" aria-label="Prioridad">
+          <option value="urgent">🔴 Urgente</option>
+          <option value="progress">🟡 En progreso</option>
+          <option value="optional">🟢 Opcional</option>
+        </select>
+      </div>
+ 
+      <button id="addBtn" class="btn-primary">+ Añadir tarea</button>
+    </section>
+ 
+    <!-- ── Filtros ───────────────────────────────────────────────── -->
+    <nav aria-label="Filtros de tareas" class="flex gap-2 mb-4">
+      <button class="filter-btn active" data-filter="all">Todas</button>
+      <button class="filter-btn" data-filter="pending">Pendientes</button>
+      <button class="filter-btn" data-filter="completed">Completadas</button>
+    </nav>
+ 
+    <!-- ── Lista de tareas ───────────────────────────────────────── -->
+    <ul id="taskList" role="list" aria-label="Lista de tareas"
+        class="space-y-2 max-h-72 overflow-y-auto pr-0.5"></ul>
+ 
+    <!-- ── Contador ──────────────────────────────────────────────── -->
+    <footer class="flex justify-center mt-4">
+      <div class="counter-chip">
+        <span>⏳</span>
+        <span id="taskCounter">0</span>
+        <span>pendiente(s)</span>
+      </div>
+    </footer>
+ 
   </div>
-
+ 
   <script src="app.js"></script>
 </body>
 </html>

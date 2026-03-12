@@ -1,120 +1,336 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const taskInput = document.getElementById("taskInput");
-  const addBtn = document.getElementById("addBtn");
-  const taskList = document.getElementById("taskList");
-  const taskCounter = document.getElementById("taskCounter");
-  const filterButtons = document.querySelectorAll(".filters button");
-  const categorySelector = document.getElementById("categorySelector");
-  const prioritySelector = document.getElementById("prioritySelector");
-  const darkModeBtn = document.getElementById("darkModeBtn");
-  const html = document.documentElement;
-  const body = document.body;
-  const container = document.querySelector(".container-day, .container-night");
-
-  let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-  let currentFilter = "all";
-
-  // Inicializar modo oscuro según localStorage
-  if(localStorage.getItem("darkMode") === "true") {
-    html.classList.add("dark");
-    body.classList.replace("bg-day", "bg-night");
-    container.classList.replace("container-day", "container-night");
+/**
+ * @fileoverview TaskFlow – Gestor de Tareas
+ * Lógica principal: gestión de tareas, filtros, persistencia y tema.
+ *
+ * Mejoras respecto a la versión anterior:
+ *  - Constantes centralizadas (STORAGE_KEYS, PRIORITY_CONFIG, FILTER_VALUES)
+ *  - Validación del formulario con feedback visual
+ *  - Nombres de variables descriptivos (camelCase consistente)
+ *  - Separación de responsabilidades por función
+ *  - JSDoc en todas las funciones públicas
+ *  - Eliminación de duplicidades en renderizado de badges
+ *  - Toggle de dark-mode sin necesidad de reemplazar clases manualmente
+ */
+ 
+"use strict";
+ 
+// ─── Constantes ─────────────────────────────────────────────────────────────
+ 
+/** Claves usadas para persistencia en localStorage */
+const STORAGE_KEYS = {
+  TASKS:     "taskflow_tasks",
+  DARK_MODE: "taskflow_darkMode",
+};
+ 
+/** Valores de filtro disponibles */
+const FILTER_VALUES = { ALL: "all", PENDING: "pending", COMPLETED: "completed" };
+ 
+/**
+ * Configuración de prioridades: clase CSS del badge y etiqueta visible.
+ * @type {Record<string, {badgeClass: string, label: string}>}
+ */
+const PRIORITY_CONFIG = {
+  urgent:   { badgeClass: "badge badge-urgent",   label: "🔴 Urgente"     },
+  progress: { badgeClass: "badge badge-progress", label: "🟡 En progreso" },
+  optional: { badgeClass: "badge badge-optional", label: "🟢 Opcional"    },
+};
+ 
+// ─── Estado de la aplicación ─────────────────────────────────────────────────
+ 
+/** @type {Task[]} Lista de tareas cargadas desde storage */
+let tasks = loadTasksFromStorage();
+ 
+/** @type {string} Filtro actualmente activo */
+let activeFilter = FILTER_VALUES.ALL;
+ 
+// ─── Tipos (JSDoc) ───────────────────────────────────────────────────────────
+ 
+/**
+ * @typedef {Object} Task
+ * @property {string}  id        - Identificador único (timestamp + random)
+ * @property {string}  text      - Texto de la tarea
+ * @property {string}  category  - Categoría seleccionada
+ * @property {string}  priority  - Prioridad: "urgent" | "progress" | "optional"
+ * @property {boolean} completed - Estado de completado
+ * @property {number}  createdAt - Timestamp de creación
+ */
+ 
+// ─── Persistencia ────────────────────────────────────────────────────────────
+ 
+/**
+ * Carga las tareas desde localStorage.
+ * @returns {Task[]} Array de tareas (vacío si no existe o hay error de parseo)
+ */
+function loadTasksFromStorage() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS)) || [];
+  } catch {
+    console.warn("TaskFlow: no se pudo parsear el storage. Se reinicia la lista.");
+    return [];
   }
-
-  function saveTasks() {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+ 
+/**
+ * Persiste el array de tareas en localStorage.
+ */
+function persistTasks() {
+  localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
+}
+ 
+// ─── Creación de tareas ───────────────────────────────────────────────────────
+ 
+/**
+ * Genera un ID único para cada tarea.
+ * @returns {string} Identificador único
+ */
+function generateTaskId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+ 
+/**
+ * Valida el texto de la tarea y muestra feedback visual.
+ * @param {string} text - Texto introducido por el usuario
+ * @returns {boolean} `true` si el texto es válido
+ */
+function validateTaskInput(text) {
+  const input     = document.getElementById("taskInput");
+  const errorMsg  = document.getElementById("inputError");
+  const isValid   = text.length > 0 && text.length <= 120;
+ 
+  input.classList.toggle("error", !isValid);
+  errorMsg.style.display = isValid ? "none" : "block";
+  return isValid;
+}
+ 
+/**
+ * Lee el formulario, valida y crea una nueva tarea.
+ * Si la validación falla, muestra el error y no añade la tarea.
+ */
+function handleAddTask() {
+  const input    = document.getElementById("taskInput");
+  const text     = input.value.trim();
+ 
+  if (!validateTaskInput(text)) {
+    input.focus();
+    return;
   }
-
-  function updateCounter() {
-    taskCounter.textContent = tasks.filter(t => !t.completed).length;
+ 
+  /** @type {Task} */
+  const newTask = {
+    id:        generateTaskId(),
+    text,
+    category:  document.getElementById("categorySelector").value,
+    priority:  document.getElementById("prioritySelector").value,
+    completed: false,
+    createdAt: Date.now(),
+  };
+ 
+  tasks.push(newTask);
+  input.value = "";
+  input.classList.remove("error");
+  document.getElementById("inputError").style.display = "none";
+ 
+  persistTasks();
+  renderTaskList();
+}
+ 
+// ─── Mutaciones de tarea ─────────────────────────────────────────────────────
+ 
+/**
+ * Alterna el estado completado de una tarea por su ID.
+ * @param {string} taskId - ID de la tarea a alternar
+ */
+function toggleTaskCompletion(taskId) {
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  task.completed = !task.completed;
+  persistTasks();
+  renderTaskList();
+}
+ 
+/**
+ * Elimina una tarea del array por su ID.
+ * @param {string} taskId - ID de la tarea a eliminar
+ */
+function deleteTask(taskId) {
+  tasks = tasks.filter(t => t.id !== taskId);
+  persistTasks();
+  renderTaskList();
+}
+ 
+// ─── Filtrado ────────────────────────────────────────────────────────────────
+ 
+/**
+ * Devuelve las tareas según el filtro activo.
+ * @returns {Task[]} Tareas filtradas
+ */
+function getFilteredTasks() {
+  switch (activeFilter) {
+    case FILTER_VALUES.PENDING:   return tasks.filter(t => !t.completed);
+    case FILTER_VALUES.COMPLETED: return tasks.filter(t =>  t.completed);
+    default:                      return [...tasks];
   }
-
-  function updateActiveFilter() {
-    filterButtons.forEach(btn => btn.classList.remove("bg-blue-500", "text-white", "dark:bg-blue-600"));
-    const activeBtn = Array.from(filterButtons).find(btn => btn.dataset.filter === currentFilter);
-    if(activeBtn) {
-      activeBtn.classList.add("bg-blue-500", "text-white", "dark:bg-blue-600");
-    }
-  }
-
-  function renderTasks() {
-    taskList.innerHTML = "";
-    let filtered = tasks;
-    if(currentFilter === "pending") filtered = tasks.filter(t => !t.completed);
-    if(currentFilter === "completed") filtered = tasks.filter(t => t.completed);
-
-    filtered.forEach(task => {
-      const li = document.createElement("li");
-      li.className = `task-item flex justify-between items-center p-3 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition ${task.completed ? 'line-through opacity-60' : ''}`;
-      li.innerHTML = `
-        <div class="flex items-center gap-3">
-          <span class="font-medium">${task.text}</span>
-          <span class="px-2 py-1 text-xs rounded bg-blue-200 text-blue-800 dark:bg-blue-600 dark:text-white">${task.category}</span>
-          <span class="px-2 py-1 text-xs rounded ${
-            task.priority === 'urgente' ? 'bg-red-500 text-white' :
-            task.priority === 'progreso' ? 'bg-yellow-400 text-black' : 'bg-green-500 text-white'
-          }">${task.priority === 'urgente' ? 'Urgente' : task.priority === 'progreso' ? 'En progreso' : 'Opcional'}</span>
-        </div>
-        <div class="flex gap-2">
-          <button class="complete-btn px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 dark:bg-green-400 dark:hover:bg-green-500 transition">✔</button>
-          <button class="delete-btn px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 dark:bg-red-400 dark:hover:bg-red-500 transition">✖</button>
-        </div>
-      `;
-      li.querySelector(".complete-btn").onclick = () => {
-        task.completed = !task.completed;
-        saveTasks();
-        renderTasks();
-      };
-      li.querySelector(".delete-btn").onclick = () => {
-        tasks.splice(tasks.indexOf(task), 1);
-        saveTasks();
-        renderTasks();
-      };
+}
+ 
+// ─── Renderizado ─────────────────────────────────────────────────────────────
+ 
+/**
+ * Construye el HTML de los badges de categoría y prioridad para una tarea.
+ * @param {Task} task - La tarea a la que pertenecen los badges
+ * @returns {string} Fragmento HTML con los badges
+ */
+function buildBadgesHTML(task) {
+  const { badgeClass, label } = PRIORITY_CONFIG[task.priority] ?? PRIORITY_CONFIG.optional;
+  return `
+    <span class="badge badge-cat">${task.category}</span>
+    <span class="${badgeClass}">${label}</span>
+  `;
+}
+ 
+/**
+ * Crea el elemento <li> para una tarea y enlaza sus eventos.
+ * @param {Task} task - Datos de la tarea
+ * @returns {HTMLLIElement} Elemento de lista listo para insertar
+ */
+function createTaskElement(task) {
+  const li = document.createElement("li");
+  li.className = `task-item${task.completed ? " done" : ""}`;
+  li.setAttribute("role", "listitem");
+  li.dataset.id = task.id;
+ 
+  li.innerHTML = `
+    <div class="flex flex-col gap-1 min-w-0">
+      <span class="task-text font-medium text-sm leading-snug truncate">${escapeHTML(task.text)}</span>
+      <div class="flex flex-wrap gap-1">${buildBadgesHTML(task)}</div>
+    </div>
+    <div class="flex gap-1 flex-shrink-0 mt-0.5">
+      <button class="task-action btn-complete" aria-label="Marcar como ${task.completed ? 'pendiente' : 'completada'}">✔</button>
+      <button class="task-action btn-delete"   aria-label="Eliminar tarea">✖</button>
+    </div>
+  `;
+ 
+  li.querySelector(".btn-complete").addEventListener("click", () => toggleTaskCompletion(task.id));
+  li.querySelector(".btn-delete").addEventListener("click",   () => deleteTask(task.id));
+ 
+  return li;
+}
+ 
+/**
+ * Escapa caracteres HTML especiales para prevenir XSS.
+ * @param {string} str - Cadena a escapar
+ * @returns {string} Cadena segura para insertar en el DOM
+ */
+function escapeHTML(str) {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+ 
+/**
+ * Renderiza la lista completa de tareas según el filtro activo.
+ * Muestra un estado vacío si no hay resultados.
+ */
+function renderTaskList() {
+  const taskList     = document.getElementById("taskList");
+  const taskCounter  = document.getElementById("taskCounter");
+  const filteredTasks = getFilteredTasks();
+ 
+  taskList.innerHTML = "";
+ 
+  if (filteredTasks.length === 0) {
+    taskList.innerHTML = `
+      <li class="empty-state">
+        <span class="emoji">📭</span>
+        ${activeFilter === FILTER_VALUES.COMPLETED
+          ? "Todavía no has completado ninguna tarea."
+          : "No hay tareas aquí. ¡Añade una!"}
+      </li>`;
+  } else {
+    filteredTasks.forEach(task => {
+      const li = createTaskElement(task);
       taskList.appendChild(li);
-      setTimeout(() => li.classList.add("show"), 10);
+      // Pequeño delay para que la animación CSS se dispare
+      requestAnimationFrame(() => requestAnimationFrame(() => li.classList.add("show")));
     });
-
-    updateCounter();
   }
-
-  function addTask() {
-    const text = taskInput.value.trim();
-    if(!text) return;
-    const category = categorySelector.value;
-    const priority = prioritySelector.value;
-    tasks.push({text, category, priority, completed: false});
-    taskInput.value = "";
-    saveTasks();
-    renderTasks();
-  }
-
-  addBtn.addEventListener("click", addTask);
-  taskInput.addEventListener("keypress", e => { if(e.key === "Enter") addTask(); });
-
-  filterButtons.forEach(btn => {
-    btn.onclick = () => {
-      currentFilter = btn.dataset.filter;
-      renderTasks();
-      updateActiveFilter();
-    };
+ 
+  taskCounter.textContent = tasks.filter(t => !t.completed).length;
+}
+ 
+// ─── Filtros ─────────────────────────────────────────────────────────────────
+ 
+/**
+ * Actualiza el filtro activo y vuelve a renderizar la lista.
+ * @param {string} filterValue - Valor del filtro seleccionado
+ */
+function applyFilter(filterValue) {
+  activeFilter = filterValue;
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.filter === filterValue);
   });
-
-  // BOTÓN MODO OSCURO FUNCIONAL
-  darkModeBtn.addEventListener("click", () => {
-    const isDark = html.classList.toggle("dark");
-    localStorage.setItem("darkMode", isDark);
-
-    // Cambiar clases del body y contenedor
-    if(isDark) {
-      body.classList.replace("bg-day", "bg-night");
-      container.classList.replace("container-day", "container-night");
-    } else {
-      body.classList.replace("bg-night", "bg-day");
-      container.classList.replace("container-night", "container-day");
+  renderTaskList();
+}
+ 
+// ─── Dark mode ───────────────────────────────────────────────────────────────
+ 
+/**
+ * Aplica el estado del dark mode (clase en <html>) y actualiza el botón.
+ * @param {boolean} isDark - `true` para activar el modo oscuro
+ */
+function applyDarkMode(isDark) {
+  document.documentElement.classList.toggle("dark", isDark);
+  document.getElementById("darkIcon").textContent  = isDark ? "☀️" : "🌙";
+  document.getElementById("darkLabel").textContent = isDark ? "Día"  : "Noche";
+  localStorage.setItem(STORAGE_KEYS.DARK_MODE, isDark);
+}
+ 
+/**
+ * Alterna el dark mode entre activo e inactivo.
+ */
+function toggleDarkMode() {
+  const isDark = !document.documentElement.classList.contains("dark");
+  applyDarkMode(isDark);
+}
+ 
+// ─── Inicialización ───────────────────────────────────────────────────────────
+ 
+/**
+ * Punto de entrada: enlaza eventos y realiza el render inicial.
+ */
+function init() {
+  // Restaurar dark mode
+  applyDarkMode(localStorage.getItem(STORAGE_KEYS.DARK_MODE) === "true");
+ 
+  // Botón añadir
+  document.getElementById("addBtn").addEventListener("click", handleAddTask);
+ 
+  // Enter en el input
+  document.getElementById("taskInput").addEventListener("keydown", e => {
+    if (e.key === "Enter") handleAddTask();
+  });
+ 
+  // Limpiar error al escribir
+  document.getElementById("taskInput").addEventListener("input", () => {
+    const input = document.getElementById("taskInput");
+    if (input.classList.contains("error") && input.value.trim()) {
+      input.classList.remove("error");
+      document.getElementById("inputError").style.display = "none";
     }
   });
-
+ 
+  // Botones de filtro
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => applyFilter(btn.dataset.filter));
+  });
+ 
+  // Toggle dark mode
+  document.getElementById("darkModeBtn").addEventListener("click", toggleDarkMode);
+ 
   // Render inicial
-  renderTasks();
-  updateActiveFilter();
-});
+  renderTaskList();
+}
+ 
+document.addEventListener("DOMContentLoaded", init);

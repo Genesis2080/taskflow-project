@@ -5,18 +5,12 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Poppins", "sans-serif"],
+        sans:    ["DM Sans", "sans-serif"],
+        display: ["Syne", "sans-serif"],
       },
       colors: {
-        dayStart: "#fdf6e3",
-        dayMiddle: "#fdd9b5",
-        dayEnd: "#f9c5a1",
-        nightStart: "#1e293b",
-        nightMiddle: "#111827",
-        nightEnd: "#0f172a",
-      },
-      maxWidth: {
-        gestor: "24rem",
+        day:   { from: "#fdf6e3", mid: "#fdd9b5", to: "#f9c5a1" },
+        night: { from: "#0f172a", mid: "#111827", to: "#1e293b" },
       },
     },
   },
