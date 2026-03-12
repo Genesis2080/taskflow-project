@@ -8,10 +8,11 @@
  *  - Dark mode
  *  - Edición inline con doble clic (Enter/blur guarda · Escape cancela)
  *  - Panel de estadísticas de productividad (desplegable)
- *  - Fechas límite con alertas visuales:
- *      · Badge con días restantes (verde / amarillo / rojo / vencida)
- *      · Borde lateral de color en el card según urgencia
- *      · Indicador parpadeante en tareas vencidas
+ *  - Fechas límite con alertas visuales
+ *  - Sonido de completado (Web Audio API, sin dependencias)
+ *      · Acorde mayor ascendente (Do-Mi-Sol) al marcar completada
+ *      · Descenso suave de dos notas al desmarcar
+ *      · AudioContext precalentado en el primer clic del usuario
  */
 
 "use strict";
@@ -33,13 +34,6 @@ const PRIORITY_CONFIG = {
   optional: { badgeClass: "badge badge-optional", label: "🟢 Opcional"    },
 };
 
-/**
- * Umbrales para colorear la fecha límite (días restantes).
- * overdue  → vencida (días < 0)
- * critical → hoy o mañana (0-1)
- * warning  → esta semana (2-6)
- * ok       → 7+ días
- */
 const DUE_STATUS = {
   OVERDUE:  "overdue",
   CRITICAL: "critical",
@@ -58,18 +52,21 @@ let activeFilter = FILTER_VALUES.ALL;
 /** @type {boolean} */
 let statsOpen = false;
 
+/** @type {AudioContext|null} Se inicializa tras el primer gesto del usuario */
+let audioCtx = null;
+
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
 /**
  * @typedef {Object} Task
- * @property {string}      id          - Identificador único
- * @property {string}      text        - Texto de la tarea
- * @property {string}      category    - Categoría seleccionada
- * @property {string}      priority    - "urgent" | "progress" | "optional"
- * @property {boolean}     completed   - Estado de completado
- * @property {number}      createdAt   - Timestamp de creación
- * @property {number|null} completedAt - Timestamp de completado
- * @property {string|null} dueDate     - Fecha límite "YYYY-MM-DD" o null
+ * @property {string}      id
+ * @property {string}      text
+ * @property {string}      category
+ * @property {string}      priority
+ * @property {boolean}     completed
+ * @property {number}      createdAt
+ * @property {number|null} completedAt
+ * @property {string|null} dueDate     - "YYYY-MM-DD" o null
  */
 
 // ─── Persistencia ────────────────────────────────────────────────────────────
@@ -101,11 +98,7 @@ function persistCompletedDays(data) {
 
 // ─── Helpers de fecha ─────────────────────────────────────────────────────────
 
-/**
- * Devuelve "YYYY-MM-DD" para un timestamp (o hoy si se omite).
- * @param {number} [ts]
- * @returns {string}
- */
+/** @param {number} [ts] @returns {string} */
 function dateKey(ts) {
   const d = ts ? new Date(ts) : new Date();
   return d.toISOString().slice(0, 10);
@@ -117,12 +110,7 @@ function shortDayName(key) {
   return names[new Date(key + "T12:00:00").getDay()];
 }
 
-/**
- * Días naturales entre hoy y una fecha límite "YYYY-MM-DD".
- * Negativo → vencida.
- * @param {string} dueDateStr
- * @returns {number}
- */
+/** @param {string} dueDateStr @returns {number} */
 function daysUntilDue(dueDateStr) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -130,11 +118,7 @@ function daysUntilDue(dueDateStr) {
   return Math.round((due - today) / 86_400_000);
 }
 
-/**
- * Clasifica los días restantes en un estado visual.
- * @param {number} days
- * @returns {string} DUE_STATUS.*
- */
+/** @param {number} days @returns {string} */
 function getDueStatus(days) {
   if (days < 0)  return DUE_STATUS.OVERDUE;
   if (days <= 1) return DUE_STATUS.CRITICAL;
@@ -142,22 +126,103 @@ function getDueStatus(days) {
   return DUE_STATUS.OK;
 }
 
-/**
- * Construye la etiqueta y clase del badge de fecha límite.
- * @param {string} dueDateStr
- * @returns {{ label: string, statusClass: string }}
- */
+/** @param {string} dueDateStr @returns {{ label:string, statusClass:string }} */
 function buildDueBadgeInfo(dueDateStr) {
   const days   = daysUntilDue(dueDateStr);
   const status = getDueStatus(days);
 
   let label;
-  if (days < 0)       label = `Vencida hace ${Math.abs(days)}d`;
+  if (days < 0)        label = `Vencida hace ${Math.abs(days)}d`;
   else if (days === 0) label = "Vence hoy";
   else if (days === 1) label = "Vence mañana";
   else                 label = `${days}d restantes`;
 
   return { label, statusClass: `badge-due badge-due-${status}` };
+}
+
+// ─── Audio ────────────────────────────────────────────────────────────────────
+
+/**
+ * Devuelve el AudioContext, creándolo si aún no existe.
+ * Los navegadores requieren que se instancie tras un gesto del usuario.
+ * @returns {AudioContext}
+ */
+function getAudioContext() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+
+/**
+ * Toca una nota con envolvente ADSR sencilla.
+ *
+ * @param {AudioContext}                              ctx
+ * @param {number}                                    frequency  - Hz
+ * @param {number}                                    startTime  - segundos desde ctx.currentTime
+ * @param {number}                                    duration   - segundos totales
+ * @param {number}                                    peakGain   - volumen pico (0–1)
+ * @param {"sine"|"triangle"|"square"|"sawtooth"}    [type]
+ */
+function playNote(ctx, frequency, startTime, duration, peakGain, type = "sine") {
+  const osc  = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  osc.type = type;
+  osc.frequency.setValueAtTime(frequency, startTime);
+
+  // Attack corto → sustain breve → release exponencial
+  const attack  = 0.012;
+  const release = duration * 0.55;
+
+  gain.gain.setValueAtTime(0, startTime);
+  gain.gain.linearRampToValueAtTime(peakGain, startTime + attack);
+  gain.gain.setValueAtTime(peakGain, startTime + duration - release);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+  osc.start(startTime);
+  osc.stop(startTime + duration);
+}
+
+/**
+ * Sonido de tarea COMPLETADA.
+ * Acorde Do mayor arpegiado (Do5 → Mi5 → Sol5) con brillo final en Do6.
+ * Timbre cálido usando osciladores triangle.
+ */
+function playCompleteSound() {
+  try {
+    const ctx = getAudioContext();
+    const t   = ctx.currentTime;
+    const v   = 0.18;
+
+    playNote(ctx, 523.25, t,        0.28, v,         "triangle"); // Do5
+    playNote(ctx, 659.25, t + 0.07, 0.26, v * 0.90,  "triangle"); // Mi5
+    playNote(ctx, 783.99, t + 0.14, 0.30, v * 0.85,  "triangle"); // Sol5
+    playNote(ctx, 1046.5, t + 0.22, 0.18, v * 0.45,  "sine");     // Do6 (brillo)
+  } catch (err) {
+    console.warn("TaskFlow: error en playCompleteSound.", err);
+  }
+}
+
+/**
+ * Sonido de tarea DES-COMPLETADA.
+ * Descenso de dos notas (La4 → Fa4), discreto y neutro.
+ */
+function playUncompleteSound() {
+  try {
+    const ctx = getAudioContext();
+    const t   = ctx.currentTime;
+    const v   = 0.10;
+
+    playNote(ctx, 440,    t,        0.20, v,        "sine"); // La4
+    playNote(ctx, 349.23, t + 0.10, 0.20, v * 0.75, "sine"); // Fa4
+  } catch (err) {
+    console.warn("TaskFlow: error en playUncompleteSound.", err);
+  }
 }
 
 // ─── Creación de tareas ───────────────────────────────────────────────────────
@@ -176,8 +241,8 @@ function validateTaskInput(text) {
 }
 
 function handleAddTask() {
-  const input   = document.getElementById("taskInput");
-  const text    = input.value.trim();
+  const input      = document.getElementById("taskInput");
+  const text       = input.value.trim();
   if (!validateTaskInput(text)) { input.focus(); return; }
 
   const dueDateRaw = document.getElementById("dueDateInput").value;
@@ -215,11 +280,15 @@ function toggleTaskCompletion(taskId) {
   task.completed   = !task.completed;
   task.completedAt = task.completed ? Date.now() : null;
 
+  // ── Sonido según dirección ────────────────────────────────
   if (task.completed) {
+    playCompleteSound();
     const days = loadCompletedDays();
     const key  = dateKey();
     days[key]  = (days[key] || 0) + 1;
     persistCompletedDays(days);
+  } else {
+    playUncompleteSound();
   }
 
   persistTasks();
@@ -249,8 +318,6 @@ function updateTaskText(taskId, newText) {
 // ─── Edición inline ───────────────────────────────────────────────────────────
 
 /**
- * Activa edición inline sobre el <span> de texto.
- * Enter / blur → guarda · Escape → cancela
  * @param {HTMLElement} textSpan
  * @param {Task}        task
  */
@@ -426,7 +493,6 @@ function buildBadgesHTML(task) {
                   📅 ${dueLabel}
                 </span>`;
   } else if (task.dueDate && task.completed) {
-    // Fecha límite apagada en tareas completadas
     dueBadge = `<span class="badge badge-due badge-due-done">📅 ${task.dueDate}</span>`;
   }
 
@@ -437,20 +503,15 @@ function buildBadgesHTML(task) {
   `;
 }
 
-/**
- * Devuelve la clase CSS de borde lateral según la urgencia de la fecha límite.
- * @param {Task} task
- * @returns {string}
- */
+/** @param {Task} task @returns {string} */
 function getDueBorderClass(task) {
   if (!task.dueDate || task.completed) return "";
-  const status = getDueStatus(daysUntilDue(task.dueDate));
-  return `due-border-${status}`;
+  return `due-border-${getDueStatus(daysUntilDue(task.dueDate))}`;
 }
 
 /** @param {Task} task @returns {HTMLLIElement} */
 function createTaskElement(task) {
-  const li = document.createElement("li");
+  const li             = document.createElement("li");
   const dueBorderClass = getDueBorderClass(task);
   li.className = `task-item${task.completed ? " done" : ""}${dueBorderClass ? " " + dueBorderClass : ""}`;
   li.setAttribute("role", "listitem");
@@ -563,6 +624,10 @@ function init() {
 
   document.getElementById("darkModeBtn").addEventListener("click", toggleDarkMode);
   document.getElementById("statsBtn").addEventListener("click", toggleStats);
+
+  // Precalentar el AudioContext con el primer clic en el documento,
+  // evita el delay perceptible en la primera reproducción.
+  document.addEventListener("click", () => getAudioContext(), { once: true });
 
   renderTaskList();
 }
