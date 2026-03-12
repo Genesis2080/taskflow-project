@@ -140,6 +140,92 @@ Usa los botones de la barra de filtros:
 
 ---
 
+## 🧪 Ejemplos de uso
+
+Los siguientes escenarios ilustran cómo TaskFlow encaja en flujos de trabajo reales.
+
+---
+
+### Ejemplo 1 — Jornada de trabajo típica
+
+Llegas por la mañana y quieres organizar el día:
+
+1. Añades tres tareas:
+
+   | Tarea | Categoría | Prioridad | Fecha límite |
+   |---|---|---|---|
+   | Entregar informe Q2 | Trabajo | 🔴 Urgente | hoy |
+   | Revisar pull requests | Trabajo | 🟡 En progreso | mañana |
+   | Comprar café de oficina | Personal | 🟢 Opcional | — |
+
+2. La primera tarea aparece con **borde rojo** y badge **"Vence hoy"** parpadeante.
+3. Completas "Entregar informe Q2" → suena el **acorde de completado** y el badge pasa a tachado.
+4. Al final del día abres **📊 Estadísticas** y ves que llevas **3 días de racha** y has completado el 66 % de las tareas del día.
+
+---
+
+### Ejemplo 2 — Corrección de un error al eliminar
+
+Tienes 5 tareas en lista y eliminas "Preparar presentación" por equivocación:
+
+```
+[✔] Enviar factura               ← completada
+[✖] Preparar presentación        ← clic accidental en ✖
+[ ] Llamar al cliente
+[ ] Revisar contrato
+[ ] Actualizar portfolio
+```
+
+1. La tarea desaparece de la lista al instante.
+2. Aparece el toast en la parte inferior:
+   ```
+   ███████████░░░░░  "Preparar presentación" eliminada   [Deshacer]
+   ```
+3. Pulsas **Deshacer** antes de que expiren los 5 segundos.
+4. La tarea vuelve exactamente a su **segunda posición**, como si nada hubiera pasado.
+
+---
+
+### Ejemplo 3 — Edición inline de una tarea mal escrita
+
+Añadiste "Emviar propuesta al cliente" con una errata:
+
+1. Haz **doble clic** sobre el texto de la tarea — el texto se convierte en un input editable.
+2. Corrige la errata: `Emviar` → `Enviar`.
+3. Pulsa `Enter` — el texto se actualiza en la lista y se guarda en `localStorage` sin recargar la página.
+
+Si cambias de opinión a mitad de la edición, pulsa `Escape` para descartar y recuperar el texto original.
+
+---
+
+### Ejemplo 4 — Seguimiento de un proyecto de estudio
+
+Estás preparando un examen durante una semana:
+
+1. Creas tareas diarias con fechas límite escalonadas:
+
+   ```
+   [ ] Leer capítulo 1-3     📅 lunes    → 🟢 5d restantes
+   [ ] Hacer ejercicios T1   📅 martes   → 🟢 6d restantes
+   [ ] Repasar apuntes       📅 miércoles
+   [ ] Simulacro de examen   📅 jueves   → 🟡 3d restantes
+   [ ] Revisión final        📅 viernes  → 🔴 Mañana
+   ```
+
+2. Cada día completas las tareas correspondientes → la **racha sube** en el panel de estadísticas.
+3. Si llegas al jueves sin haber hecho los ejercicios del martes, su badge aparece en **rojo parpadeante** como recordatorio visual inmediato.
+4. Al final de la semana, el panel muestra el **gráfico de barras** con picos en los días más productivos y el **100 % de completado** si terminaste todo.
+
+---
+
+### Ejemplo 5 — Uso en modo oscuro en entorno nocturno
+
+1. Haz clic en **🌙 Noche** — toda la interfaz cambia a tonos oscuros (fondo, card, inputs, badges).
+2. La preferencia queda guardada: la próxima vez que abras la app, arrancará directamente en modo oscuro.
+3. Para volver al tema claro, haz clic en **☀️ Día**.
+
+---
+
 ## 📌 Notas técnicas
 
 - El proyecto usa **Tailwind CSS vía CDN** — no requiere instalación ni compilación.
