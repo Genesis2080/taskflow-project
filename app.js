@@ -118,8 +118,3 @@ document.addEventListener("DOMContentLoaded", () => {
   renderTasks();
   updateActiveFilter();
 });
-
-// Crear una funcion que calcule el radio de un circulo
-function calcularRadio(area) {
-  return Math.sqrt(area / Math.PI);
-}
