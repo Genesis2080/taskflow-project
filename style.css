@@ -181,3 +181,18 @@ body {
   font-weight: 600;
 }
 .dark .counter-chip { background: #312e81; color: #c7d2fe; }
+
+/* ─── Edición inline ────────────────────────────────────────── */
+.task-text { cursor: default; }
+.task-text:not(.editing):not(.task-item.done .task-text) { cursor: text; }
+
+.edit-inline-input {
+  padding: .2rem .45rem;
+  font-size: .875rem;
+  font-weight: 500;
+  font-family: inherit;
+  line-height: 1.4;
+  border-radius: .4rem;
+  width: 100%;
+  min-width: 0;
+}
