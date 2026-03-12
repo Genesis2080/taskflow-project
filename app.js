@@ -1,7 +1,7 @@
 /**
  * @fileoverview TaskFlow – Gestor de Tareas
  *
- * Funcionalidades acumuladas:
+ * Funcionalidades:
  *  - Gestión de tareas (añadir, completar, eliminar)
  *  - Filtros (todas, pendientes, completadas)
  *  - Persistencia en localStorage
@@ -9,10 +9,8 @@
  *  - Edición inline con doble clic (Enter/blur guarda · Escape cancela)
  *  - Panel de estadísticas de productividad (desplegable)
  *  - Fechas límite con alertas visuales
- *  - Sonido de completado (Web Audio API, sin dependencias)
- *      · Acorde mayor ascendente (Do-Mi-Sol) al marcar completada
- *      · Descenso suave de dos notas al desmarcar
- *      · AudioContext precalentado en el primer clic del usuario
+ *  - Sonido de completado (Web Audio API)
+ *  - Undo al eliminar: toast 5 s con barra de progreso y restauración posicional
  */
 
 "use strict";
@@ -27,7 +25,7 @@ const STORAGE_KEYS = {
 
 const FILTER_VALUES = { ALL: "all", PENDING: "pending", COMPLETED: "completed" };
 
-/** @type {Record<string, {badgeClass:string, label:string}>} */
+/** @type {Record<string,{badgeClass:string,label:string}>} */
 const PRIORITY_CONFIG = {
   urgent:   { badgeClass: "badge badge-urgent",   label: "🔴 Urgente"     },
   progress: { badgeClass: "badge badge-progress", label: "🟡 En progreso" },
@@ -41,6 +39,9 @@ const DUE_STATUS = {
   OK:       "ok",
 };
 
+/** Tiempo en ms que el toast de undo permanece visible */
+const UNDO_TIMEOUT_MS = 5000;
+
 // ─── Estado ──────────────────────────────────────────────────────────────────
 
 /** @type {Task[]} */
@@ -52,8 +53,14 @@ let activeFilter = FILTER_VALUES.ALL;
 /** @type {boolean} */
 let statsOpen = false;
 
-/** @type {AudioContext|null} Se inicializa tras el primer gesto del usuario */
+/** @type {AudioContext|null} */
 let audioCtx = null;
+
+/**
+ * Undo pendiente tras un borrado.
+ * @type {{ task: Task, index: number, timerId: number } | null}
+ */
+let pendingUndo = null;
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -66,7 +73,7 @@ let audioCtx = null;
  * @property {boolean}     completed
  * @property {number}      createdAt
  * @property {number|null} completedAt
- * @property {string|null} dueDate     - "YYYY-MM-DD" o null
+ * @property {string|null} dueDate
  */
 
 // ─── Persistencia ────────────────────────────────────────────────────────────
@@ -130,99 +137,67 @@ function getDueStatus(days) {
 function buildDueBadgeInfo(dueDateStr) {
   const days   = daysUntilDue(dueDateStr);
   const status = getDueStatus(days);
-
   let label;
   if (days < 0)        label = `Vencida hace ${Math.abs(days)}d`;
   else if (days === 0) label = "Vence hoy";
   else if (days === 1) label = "Vence mañana";
   else                 label = `${days}d restantes`;
-
   return { label, statusClass: `badge-due badge-due-${status}` };
 }
 
 // ─── Audio ────────────────────────────────────────────────────────────────────
 
-/**
- * Devuelve el AudioContext, creándolo si aún no existe.
- * Los navegadores requieren que se instancie tras un gesto del usuario.
- * @returns {AudioContext}
- */
 function getAudioContext() {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === "suspended") audioCtx.resume();
   return audioCtx;
 }
 
 /**
- * Toca una nota con envolvente ADSR sencilla.
- *
- * @param {AudioContext}                              ctx
- * @param {number}                                    frequency  - Hz
- * @param {number}                                    startTime  - segundos desde ctx.currentTime
- * @param {number}                                    duration   - segundos totales
- * @param {number}                                    peakGain   - volumen pico (0–1)
- * @param {"sine"|"triangle"|"square"|"sawtooth"}    [type]
+ * @param {AudioContext}                           ctx
+ * @param {number}                                 frequency
+ * @param {number}                                 startTime
+ * @param {number}                                 duration
+ * @param {number}                                 peakGain
+ * @param {"sine"|"triangle"|"square"|"sawtooth"} [type]
  */
 function playNote(ctx, frequency, startTime, duration, peakGain, type = "sine") {
   const osc  = ctx.createOscillator();
   const gain = ctx.createGain();
-
   osc.connect(gain);
   gain.connect(ctx.destination);
-
   osc.type = type;
   osc.frequency.setValueAtTime(frequency, startTime);
-
-  // Attack corto → sustain breve → release exponencial
   const attack  = 0.012;
   const release = duration * 0.55;
-
   gain.gain.setValueAtTime(0, startTime);
   gain.gain.linearRampToValueAtTime(peakGain, startTime + attack);
   gain.gain.setValueAtTime(peakGain, startTime + duration - release);
   gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
-
   osc.start(startTime);
   osc.stop(startTime + duration);
 }
 
-/**
- * Sonido de tarea COMPLETADA.
- * Acorde Do mayor arpegiado (Do5 → Mi5 → Sol5) con brillo final en Do6.
- * Timbre cálido usando osciladores triangle.
- */
 function playCompleteSound() {
   try {
     const ctx = getAudioContext();
     const t   = ctx.currentTime;
     const v   = 0.18;
-
-    playNote(ctx, 523.25, t,        0.28, v,         "triangle"); // Do5
-    playNote(ctx, 659.25, t + 0.07, 0.26, v * 0.90,  "triangle"); // Mi5
-    playNote(ctx, 783.99, t + 0.14, 0.30, v * 0.85,  "triangle"); // Sol5
-    playNote(ctx, 1046.5, t + 0.22, 0.18, v * 0.45,  "sine");     // Do6 (brillo)
-  } catch (err) {
-    console.warn("TaskFlow: error en playCompleteSound.", err);
-  }
+    playNote(ctx, 523.25, t,        0.28, v,        "triangle");
+    playNote(ctx, 659.25, t + 0.07, 0.26, v * 0.90, "triangle");
+    playNote(ctx, 783.99, t + 0.14, 0.30, v * 0.85, "triangle");
+    playNote(ctx, 1046.5, t + 0.22, 0.18, v * 0.45, "sine");
+  } catch (e) { console.warn("TaskFlow: playCompleteSound", e); }
 }
 
-/**
- * Sonido de tarea DES-COMPLETADA.
- * Descenso de dos notas (La4 → Fa4), discreto y neutro.
- */
 function playUncompleteSound() {
   try {
     const ctx = getAudioContext();
     const t   = ctx.currentTime;
     const v   = 0.10;
-
-    playNote(ctx, 440,    t,        0.20, v,        "sine"); // La4
-    playNote(ctx, 349.23, t + 0.10, 0.20, v * 0.75, "sine"); // Fa4
-  } catch (err) {
-    console.warn("TaskFlow: error en playUncompleteSound.", err);
-  }
+    playNote(ctx, 440,    t,        0.20, v,        "sine");
+    playNote(ctx, 349.23, t + 0.10, 0.20, v * 0.75, "sine");
+  } catch (e) { console.warn("TaskFlow: playUncompleteSound", e); }
 }
 
 // ─── Creación de tareas ───────────────────────────────────────────────────────
@@ -241,8 +216,8 @@ function validateTaskInput(text) {
 }
 
 function handleAddTask() {
-  const input      = document.getElementById("taskInput");
-  const text       = input.value.trim();
+  const input = document.getElementById("taskInput");
+  const text  = input.value.trim();
   if (!validateTaskInput(text)) { input.focus(); return; }
 
   const dueDateRaw = document.getElementById("dueDateInput").value;
@@ -280,7 +255,6 @@ function toggleTaskCompletion(taskId) {
   task.completed   = !task.completed;
   task.completedAt = task.completed ? Date.now() : null;
 
-  // ── Sonido según dirección ────────────────────────────────
   if (task.completed) {
     playCompleteSound();
     const days = loadCompletedDays();
@@ -296,23 +270,85 @@ function toggleTaskCompletion(taskId) {
   if (statsOpen) renderStats();
 }
 
-/** @param {string} taskId */
+// ─── Undo al eliminar ─────────────────────────────────────────────────────────
+
+/**
+ * Elimina una tarea iniciando una ventana de 5 s para deshacer.
+ * Si ya hay un borrado pendiente, lo confirma antes de proceder.
+ * @param {string} taskId
+ */
 function deleteTask(taskId) {
-  tasks = tasks.filter(t => t.id !== taskId);
+  // Confirmar borrado anterior pendiente
+  if (pendingUndo) commitDelete();
+
+  const index = tasks.findIndex(t => t.id === taskId);
+  if (index === -1) return;
+
+  const [removedTask] = tasks.splice(index, 1);
+  const timerId = setTimeout(commitDelete, UNDO_TIMEOUT_MS);
+
+  pendingUndo = { task: removedTask, index, timerId };
+
   persistTasks();
   renderTaskList();
   if (statsOpen) renderStats();
+  showUndoToast(removedTask.text);
 }
 
 /**
- * @param {string} taskId
- * @param {string} newText
+ * Confirma el borrado pendiente y oculta el toast.
  */
-function updateTaskText(taskId, newText) {
-  const task = tasks.find(t => t.id === taskId);
-  if (!task) return;
-  task.text = newText;
+function commitDelete() {
+  if (!pendingUndo) return;
+  clearTimeout(pendingUndo.timerId);
+  pendingUndo = null;
+  hideUndoToast();
+}
+
+/**
+ * Restaura la tarea eliminada en su posición original.
+ */
+function undoDelete() {
+  if (!pendingUndo) return;
+  clearTimeout(pendingUndo.timerId);
+
+  const { task, index } = pendingUndo;
+  tasks.splice(index, 0, task);
+  pendingUndo = null;
+
   persistTasks();
+  renderTaskList();
+  if (statsOpen) renderStats();
+  hideUndoToast();
+}
+
+/**
+ * Muestra el toast con mensaje y barra de progreso animada.
+ * @param {string} taskText
+ */
+function showUndoToast(taskText) {
+  const toast   = document.getElementById("undoToast");
+  const msg     = document.getElementById("undoMsg");
+  const bar     = document.getElementById("undoProgressBar");
+  const preview = taskText.length > 32 ? taskText.slice(0, 32) + "…" : taskText;
+
+  msg.textContent = `"${preview}" eliminada`;
+
+  // Reiniciar la animación de la barra
+  bar.style.transition = "none";
+  bar.style.width      = "100%";
+  bar.getBoundingClientRect(); // forzar reflow
+  bar.style.transition = `width ${UNDO_TIMEOUT_MS}ms linear`;
+  bar.style.width      = "0%";
+
+  toast.classList.add("show");
+}
+
+/**
+ * Oculta el toast de undo.
+ */
+function hideUndoToast() {
+  document.getElementById("undoToast").classList.remove("show");
 }
 
 // ─── Edición inline ───────────────────────────────────────────────────────────
@@ -326,7 +362,6 @@ function enableInlineEdit(textSpan, task) {
 
   const originalText = task.text;
   const editInput    = document.createElement("input");
-
   editInput.type      = "text";
   editInput.value     = originalText;
   editInput.maxLength = 120;
@@ -336,13 +371,15 @@ function enableInlineEdit(textSpan, task) {
   textSpan.textContent = "";
   textSpan.appendChild(editInput);
   textSpan.classList.add("editing");
-
   editInput.focus();
   editInput.setSelectionRange(editInput.value.length, editInput.value.length);
 
   function saveEdit() {
     const newText = editInput.value.trim();
-    if (newText && newText !== originalText) updateTaskText(task.id, newText);
+    if (newText && newText !== originalText) {
+      const t = tasks.find(t => t.id === task.id);
+      if (t) { t.text = newText; persistTasks(); }
+    }
     textSpan.classList.remove("editing");
     textSpan.textContent = escapeHTML(newText || originalText);
   }
@@ -470,11 +507,9 @@ function toggleStats() {
   const panel = document.getElementById("statsPanel");
   const btn   = document.getElementById("statsBtn");
   const icon  = document.getElementById("statsIcon");
-
   panel.classList.toggle("open", statsOpen);
   btn.classList.toggle("active", statsOpen);
   icon.textContent = statsOpen ? "▲" : "📊";
-
   if (statsOpen) renderStats();
 }
 
@@ -489,9 +524,7 @@ function buildBadgesHTML(task) {
     const { label: dueLabel, statusClass } = buildDueBadgeInfo(task.dueDate);
     const isOverdue = getDueStatus(daysUntilDue(task.dueDate)) === DUE_STATUS.OVERDUE;
     dueBadge = `<span class="${statusClass}${isOverdue ? " pulse" : ""}"
-                      aria-label="Fecha límite: ${dueLabel}">
-                  📅 ${dueLabel}
-                </span>`;
+                      aria-label="Fecha límite: ${dueLabel}">📅 ${dueLabel}</span>`;
   } else if (task.dueDate && task.completed) {
     dueBadge = `<span class="badge badge-due badge-due-done">📅 ${task.dueDate}</span>`;
   }
@@ -624,9 +657,9 @@ function init() {
 
   document.getElementById("darkModeBtn").addEventListener("click", toggleDarkMode);
   document.getElementById("statsBtn").addEventListener("click", toggleStats);
+  document.getElementById("undoBtn").addEventListener("click", undoDelete);
 
-  // Precalentar el AudioContext con el primer clic en el documento,
-  // evita el delay perceptible en la primera reproducción.
+  // Precalentar AudioContext en el primer gesto del usuario
   document.addEventListener("click", () => getAudioContext(), { once: true });
 
   renderTaskList();

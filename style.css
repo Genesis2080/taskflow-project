@@ -91,8 +91,8 @@ body {
   border-radius: .65rem;
   background: #fff;
   border: 1.5px solid #e2e8f0;
-  border-left-width: 4px;           /* reservamos espacio para el borde de fecha */
-  border-left-color: #e2e8f0;       /* color neutro por defecto */
+  border-left-width: 4px;
+  border-left-color: #e2e8f0;
   opacity: 0;
   transform: translateY(8px);
   transition: opacity .25s ease, transform .25s ease, box-shadow .2s, border-color .2s;
@@ -144,14 +144,12 @@ body {
 .badge-due-critical { background: #fee2e2; color: #b91c1c; }
 .badge-due-overdue  { background: #fecaca; color: #7f1d1d; }
 .badge-due-done     { background: #f1f5f9; color: #94a3b8; text-decoration: line-through; }
-
 .dark .badge-due-ok       { background: #14532d; color: #86efac; }
 .dark .badge-due-warning  { background: #78350f; color: #fde68a; }
 .dark .badge-due-critical { background: #7f1d1d; color: #fca5a5; }
 .dark .badge-due-overdue  { background: #450a0a; color: #fca5a5; }
 .dark .badge-due-done     { background: #1e293b; color: #475569; }
 
-/* ─── Animación parpadeo para tareas vencidas ───────────────── */
 @keyframes pulse-badge {
   0%, 100% { opacity: 1; }
   50%       { opacity: .55; }
@@ -198,12 +196,12 @@ body {
   cursor: pointer;
   transition: all .25s;
 }
-.dark .toggle-pill      { background: #1e293b; color: #94a3b8; border-color: #334155; }
-.toggle-pill:hover      { border-color: #6366f1; color: #6366f1; }
+.dark .toggle-pill { background: #1e293b; color: #94a3b8; border-color: #334155; }
+.toggle-pill:hover { border-color: #6366f1; color: #6366f1; }
 
 /* ─── Estado vacío ──────────────────────────────────────────── */
-.empty-state            { text-align: center; padding: 2rem 1rem; color: #94a3b8; font-size: .875rem; }
-.empty-state .emoji     { font-size: 2rem; display: block; margin-bottom: .5rem; }
+.empty-state        { text-align: center; padding: 2rem 1rem; color: #94a3b8; font-size: .875rem; }
+.empty-state .emoji { font-size: 2rem; display: block; margin-bottom: .5rem; }
 
 /* ─── Contador ──────────────────────────────────────────────── */
 .counter-chip {
@@ -233,11 +231,7 @@ body {
   flex-shrink: 0;
 }
 .dark .due-date-label { color: #94a3b8; }
-.due-date-optional {
-  font-weight: 400;
-  color: #94a3b8;
-  font-size: .72rem;
-}
+.due-date-optional { font-weight: 400; color: #94a3b8; font-size: .72rem; }
 .due-date-field {
   flex: 1;
   min-width: 0;
@@ -245,15 +239,11 @@ body {
   font-size: .8rem;
   cursor: pointer;
 }
-/* Quitar el fondo del calendario nativo en dark */
-.dark .due-date-field::-webkit-calendar-picker-indicator {
-  filter: invert(0.7);
-}
+.dark .due-date-field::-webkit-calendar-picker-indicator { filter: invert(0.7); }
 
 /* ─── Edición inline ────────────────────────────────────────── */
 .task-text { cursor: text; }
 .task-item.done .task-text { cursor: default; }
-
 .edit-inline-input {
   padding: .2rem .45rem;
   font-size: .875rem;
@@ -280,11 +270,11 @@ body {
   cursor: pointer;
   transition: all .2s;
 }
-.dark .stats-toggle-btn       { background: #1e293b; color: #94a3b8; border-color: #334155; }
+.dark .stats-toggle-btn        { background: #1e293b; color: #94a3b8; border-color: #334155; }
 .stats-toggle-btn:hover,
-.stats-toggle-btn.active      { border-color: #6366f1; color: #6366f1; background: #eef2ff; }
+.stats-toggle-btn.active       { border-color: #6366f1; color: #6366f1; background: #eef2ff; }
 .dark .stats-toggle-btn:hover,
-.dark .stats-toggle-btn.active{ border-color: #818cf8; color: #818cf8; background: #1e1b4b; }
+.dark .stats-toggle-btn.active { border-color: #818cf8; color: #818cf8; background: #1e1b4b; }
 
 /* ─── Panel desplegable de estadísticas ─────────────────────── */
 .stats-panel {
@@ -294,11 +284,7 @@ body {
   margin-top: 0;
   transition: max-height .35s ease, opacity .3s ease, margin-top .3s ease;
 }
-.stats-panel.open {
-  max-height: 400px;
-  opacity: 1;
-  margin-top: .75rem;
-}
+.stats-panel.open { max-height: 400px; opacity: 1; margin-top: .75rem; }
 
 /* ─── KPIs ──────────────────────────────────────────────────── */
 .stats-kpis {
@@ -312,14 +298,7 @@ body {
   margin-bottom: .75rem;
 }
 .dark .stats-kpis { background: #0f172a; border-color: #1e293b; }
-
-.stats-kpi {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: .15rem;
-  flex: 1;
-}
+.stats-kpi { display: flex; flex-direction: column; align-items: center; gap: .15rem; flex: 1; }
 .stats-kpi-value {
   font-family: 'Syne', sans-serif;
   font-size: 1.3rem;
@@ -335,12 +314,7 @@ body {
   text-transform: uppercase;
   letter-spacing: .04em;
 }
-.stats-kpi-divider {
-  width: 1px;
-  height: 2rem;
-  background: #e2e8f0;
-  flex-shrink: 0;
-}
+.stats-kpi-divider { width: 1px; height: 2rem; background: #e2e8f0; flex-shrink: 0; }
 .dark .stats-kpi-divider { background: #334155; }
 
 /* ─── Gráfico de barras ─────────────────────────────────────── */
@@ -360,20 +334,8 @@ body {
   height: 72px;
   margin-bottom: .75rem;
 }
-.stats-bar-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: .2rem;
-  flex: 1;
-}
-.stats-bar-count {
-  font-size: .6rem;
-  font-weight: 600;
-  color: #64748b;
-  min-height: .85rem;
-  line-height: 1;
-}
+.stats-bar-col { display: flex; flex-direction: column; align-items: center; gap: .2rem; flex: 1; }
+.stats-bar-count { font-size: .6rem; font-weight: 600; color: #64748b; min-height: .85rem; line-height: 1; }
 .dark .stats-bar-count { color: #94a3b8; }
 .stats-bar-track {
   width: 100%;
@@ -392,30 +354,16 @@ body {
   min-height: 3px;
   transition: height .4s cubic-bezier(.4,0,.2,1);
 }
-.stats-bar-fill.today       { background: #6366f1; }
-.dark .stats-bar-fill       { background: #312e81; }
-.dark .stats-bar-fill.today { background: #818cf8; }
-.stats-bar-label {
-  font-size: .6rem;
-  font-weight: 500;
-  color: #94a3b8;
-  line-height: 1;
-}
-.stats-bar-label.today      { color: #6366f1; font-weight: 700; }
-.dark .stats-bar-label.today{ color: #818cf8; }
+.stats-bar-fill.today        { background: #6366f1; }
+.dark .stats-bar-fill        { background: #312e81; }
+.dark .stats-bar-fill.today  { background: #818cf8; }
+.stats-bar-label { font-size: .6rem; font-weight: 500; color: #94a3b8; line-height: 1; }
+.stats-bar-label.today       { color: #6366f1; font-weight: 700; }
+.dark .stats-bar-label.today { color: #818cf8; }
 
 /* ─── Barra de progreso global ──────────────────────────────── */
-.stats-progress-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: .3rem;
-}
-.stats-progress-track {
-  height: 6px;
-  background: #e2e8f0;
-  border-radius: 99px;
-  overflow: hidden;
-}
+.stats-progress-wrap { display: flex; flex-direction: column; gap: .3rem; }
+.stats-progress-track { height: 6px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
 .dark .stats-progress-track { background: #1e293b; }
 .stats-progress-fill {
   height: 100%;
@@ -424,8 +372,67 @@ body {
   transition: width .5s cubic-bezier(.4,0,.2,1);
   min-width: 0;
 }
-.stats-progress-text {
-  font-size: .7rem;
-  color: #94a3b8;
-  text-align: right;
+.stats-progress-text { font-size: .7rem; color: #94a3b8; text-align: right; }
+
+/* ─── Toast de undo ─────────────────────────────────────────── */
+#undoToast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  translate: -50% 1.5rem;
+  min-width: 260px;
+  max-width: 340px;
+  background: #1e293b;
+  color: #f1f5f9;
+  border-radius: .75rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,.32);
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .22s ease, translate .22s ease;
+  z-index: 9999;
 }
+#undoToast.show {
+  opacity: 1;
+  translate: -50% 0;
+  pointer-events: auto;
+}
+.dark #undoToast { background: #0f172a; border: 1px solid #334155; }
+
+#undoProgressBar {
+  height: 3px;
+  width: 100%;
+  background: #6366f1;
+  transform-origin: left;
+}
+
+.undo-toast-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .65rem 1rem;
+}
+.undo-toast-body span {
+  font-size: .8rem;
+  color: #94a3b8;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#undoBtn {
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: .45rem;
+  padding: .3rem .75rem;
+  font-size: .78rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .15s, transform .1s;
+}
+#undoBtn:hover  { background: #4f46e5; }
+#undoBtn:active { transform: scale(.95); }

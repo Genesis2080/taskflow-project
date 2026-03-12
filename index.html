@@ -50,7 +50,7 @@
         </select>
       </div>
 
-      <!-- ── Campo de fecha límite (NUEVO) ─────────────────────── -->
+      <!-- ── Fecha límite ───────────────────────────────────────── -->
       <div class="due-date-row">
         <label for="dueDateInput" class="due-date-label">
           📅 Fecha límite <span class="due-date-optional">(opcional)</span>
@@ -90,9 +90,18 @@
       </button>
     </div>
 
-    <!-- ── Panel de estadísticas (desplegable) ───────────────────── -->
+    <!-- ── Panel de estadísticas ─────────────────────────────────── -->
     <div id="statsPanel" class="stats-panel" aria-live="polite"></div>
 
+  </div>
+
+  <!-- ── Toast de undo (fijo en pantalla, fuera del card) ─────────── -->
+  <div id="undoToast" role="status" aria-live="polite">
+    <div id="undoProgressBar"></div>
+    <div class="undo-toast-body">
+      <span id="undoMsg"></span>
+      <button id="undoBtn">Deshacer</button>
+    </div>
   </div>
 
   <script src="app.js"></script>
