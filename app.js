@@ -1,15 +1,17 @@
 /**
  * @fileoverview TaskFlow – Gestor de Tareas
  *
- * Funcionalidades:
- *  - Constantes centralizadas (STORAGE_KEYS, PRIORITY_CONFIG, FILTER_VALUES)
- *  - Validación del formulario con feedback visual
- *  - Edición inline con doble clic (Enter/blur guarda, Escape cancela)
- *  - Panel de estadísticas de productividad (desplegable):
- *      · Tareas completadas hoy
- *      · Racha de días activos consecutivos
- *      · Mini gráfico de barras de los últimos 7 días
- *      · Tasa de completado global con barra de progreso
+ * Funcionalidades acumuladas:
+ *  - Gestión de tareas (añadir, completar, eliminar)
+ *  - Filtros (todas, pendientes, completadas)
+ *  - Persistencia en localStorage
+ *  - Dark mode
+ *  - Edición inline con doble clic (Enter/blur guarda · Escape cancela)
+ *  - Panel de estadísticas de productividad (desplegable)
+ *  - Fechas límite con alertas visuales:
+ *      · Badge con días restantes (verde / amarillo / rojo / vencida)
+ *      · Borde lateral de color en el card según urgencia
+ *      · Indicador parpadeante en tareas vencidas
  */
 
 "use strict";
@@ -19,18 +21,30 @@
 const STORAGE_KEYS = {
   TASKS:          "taskflow_tasks",
   DARK_MODE:      "taskflow_darkMode",
-  COMPLETED_DAYS: "taskflow_completedDays", // { "YYYY-MM-DD": count }
+  COMPLETED_DAYS: "taskflow_completedDays",
 };
 
 const FILTER_VALUES = { ALL: "all", PENDING: "pending", COMPLETED: "completed" };
 
-/**
- * @type {Record<string, {badgeClass: string, label: string}>}
- */
+/** @type {Record<string, {badgeClass:string, label:string}>} */
 const PRIORITY_CONFIG = {
   urgent:   { badgeClass: "badge badge-urgent",   label: "🔴 Urgente"     },
   progress: { badgeClass: "badge badge-progress", label: "🟡 En progreso" },
   optional: { badgeClass: "badge badge-optional", label: "🟢 Opcional"    },
+};
+
+/**
+ * Umbrales para colorear la fecha límite (días restantes).
+ * overdue  → vencida (días < 0)
+ * critical → hoy o mañana (0-1)
+ * warning  → esta semana (2-6)
+ * ok       → 7+ días
+ */
+const DUE_STATUS = {
+  OVERDUE:  "overdue",
+  CRITICAL: "critical",
+  WARNING:  "warning",
+  OK:       "ok",
 };
 
 // ─── Estado ──────────────────────────────────────────────────────────────────
@@ -54,7 +68,8 @@ let statsOpen = false;
  * @property {string}      priority    - "urgent" | "progress" | "optional"
  * @property {boolean}     completed   - Estado de completado
  * @property {number}      createdAt   - Timestamp de creación
- * @property {number|null} completedAt - Timestamp de completado (null si pendiente)
+ * @property {number|null} completedAt - Timestamp de completado
+ * @property {string|null} dueDate     - Fecha límite "YYYY-MM-DD" o null
  */
 
 // ─── Persistencia ────────────────────────────────────────────────────────────
@@ -63,7 +78,7 @@ function loadTasksFromStorage() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS)) || [];
   } catch {
-    console.warn("TaskFlow: no se pudo parsear el storage.");
+    console.warn("TaskFlow: error al leer el storage.");
     return [];
   }
 }
@@ -72,21 +87,14 @@ function persistTasks() {
   localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
 }
 
-/**
- * Carga el historial de completados por día { "YYYY-MM-DD": count }.
- * @returns {Record<string, number>}
- */
+/** @returns {Record<string,number>} */
 function loadCompletedDays() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEYS.COMPLETED_DAYS)) || {};
-  } catch {
-    return {};
-  }
+  } catch { return {}; }
 }
 
-/**
- * @param {Record<string, number>} data
- */
+/** @param {Record<string,number>} data */
 function persistCompletedDays(data) {
   localStorage.setItem(STORAGE_KEYS.COMPLETED_DAYS, JSON.stringify(data));
 }
@@ -94,7 +102,7 @@ function persistCompletedDays(data) {
 // ─── Helpers de fecha ─────────────────────────────────────────────────────────
 
 /**
- * Devuelve "YYYY-MM-DD" para un timestamp dado (o hoy si se omite).
+ * Devuelve "YYYY-MM-DD" para un timestamp (o hoy si se omite).
  * @param {number} [ts]
  * @returns {string}
  */
@@ -103,14 +111,53 @@ function dateKey(ts) {
   return d.toISOString().slice(0, 10);
 }
 
-/**
- * Nombre corto del día en español para un dateKey.
- * @param {string} key
- * @returns {string}
- */
+/** @param {string} key @returns {string} */
 function shortDayName(key) {
   const names = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
   return names[new Date(key + "T12:00:00").getDay()];
+}
+
+/**
+ * Días naturales entre hoy y una fecha límite "YYYY-MM-DD".
+ * Negativo → vencida.
+ * @param {string} dueDateStr
+ * @returns {number}
+ */
+function daysUntilDue(dueDateStr) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(dueDateStr + "T00:00:00");
+  return Math.round((due - today) / 86_400_000);
+}
+
+/**
+ * Clasifica los días restantes en un estado visual.
+ * @param {number} days
+ * @returns {string} DUE_STATUS.*
+ */
+function getDueStatus(days) {
+  if (days < 0)  return DUE_STATUS.OVERDUE;
+  if (days <= 1) return DUE_STATUS.CRITICAL;
+  if (days <= 6) return DUE_STATUS.WARNING;
+  return DUE_STATUS.OK;
+}
+
+/**
+ * Construye la etiqueta y clase del badge de fecha límite.
+ * @param {string} dueDateStr
+ * @returns {{ label: string, statusClass: string }}
+ */
+function buildDueBadgeInfo(dueDateStr) {
+  const days   = daysUntilDue(dueDateStr);
+  const status = getDueStatus(days);
+
+  let label;
+  if (days < 0)       label = `Vencida hace ${Math.abs(days)}d`;
+  else if (days === 0) label = "Vence hoy";
+  else if (days === 1) label = "Vence mañana";
+  else                 label = `${days}d restantes`;
+
+  return { label, statusClass: `badge-due badge-due-${status}` };
 }
 
 // ─── Creación de tareas ───────────────────────────────────────────────────────
@@ -129,9 +176,11 @@ function validateTaskInput(text) {
 }
 
 function handleAddTask() {
-  const input = document.getElementById("taskInput");
-  const text  = input.value.trim();
+  const input   = document.getElementById("taskInput");
+  const text    = input.value.trim();
   if (!validateTaskInput(text)) { input.focus(); return; }
+
+  const dueDateRaw = document.getElementById("dueDateInput").value;
 
   /** @type {Task} */
   const newTask = {
@@ -142,10 +191,12 @@ function handleAddTask() {
     completed:   false,
     createdAt:   Date.now(),
     completedAt: null,
+    dueDate:     dueDateRaw || null,
   };
 
   tasks.push(newTask);
   input.value = "";
+  document.getElementById("dueDateInput").value = "";
   input.classList.remove("error");
   document.getElementById("inputError").style.display = "none";
 
@@ -156,10 +207,7 @@ function handleAddTask() {
 
 // ─── Mutaciones ───────────────────────────────────────────────────────────────
 
-/**
- * Alterna completado y actualiza el historial diario.
- * @param {string} taskId
- */
+/** @param {string} taskId */
 function toggleTaskCompletion(taskId) {
   const task = tasks.find(t => t.id === taskId);
   if (!task) return;
@@ -179,9 +227,7 @@ function toggleTaskCompletion(taskId) {
   if (statsOpen) renderStats();
 }
 
-/**
- * @param {string} taskId
- */
+/** @param {string} taskId */
 function deleteTask(taskId) {
   tasks = tasks.filter(t => t.id !== taskId);
   persistTasks();
@@ -203,9 +249,8 @@ function updateTaskText(taskId, newText) {
 // ─── Edición inline ───────────────────────────────────────────────────────────
 
 /**
- * Activa el modo edición inline sobre el <span> de texto de una tarea.
+ * Activa edición inline sobre el <span> de texto.
  * Enter / blur → guarda · Escape → cancela
- *
  * @param {HTMLElement} textSpan
  * @param {Task}        task
  */
@@ -259,42 +304,32 @@ function getFilteredTasks() {
 
 // ─── Estadísticas ─────────────────────────────────────────────────────────────
 
-/** @returns {number} Tareas completadas hoy */
 function countCompletedToday() {
   const today = dateKey();
   return tasks.filter(t => t.completed && t.completedAt && dateKey(t.completedAt) === today).length;
 }
 
-/** @returns {number} Racha de días consecutivos con ≥1 completada */
 function calcStreak() {
   const days  = loadCompletedDays();
   const today = new Date();
   let streak  = 0;
-
   for (let i = 0; i < 365; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
     const key = d.toISOString().slice(0, 10);
-    if (days[key] && days[key] > 0) {
-      streak++;
-    } else if (i > 0) {
-      break;
-    }
+    if (days[key] && days[key] > 0) { streak++; }
+    else if (i > 0) { break; }
   }
   return streak;
 }
 
-/**
- * Datos de los últimos 7 días para el gráfico.
- * @returns {{ key: string, label: string, count: number }[]}
- */
+/** @returns {{ key:string, label:string, count:number }[]} */
 function buildWeekData() {
   const days   = loadCompletedDays();
   const today  = new Date();
   const result = [];
-
   for (let i = 6; i >= 0; i--) {
-    const d   = new Date(today);
+    const d = new Date(today);
     d.setDate(today.getDate() - i);
     const key = d.toISOString().slice(0, 10);
     result.push({ key, label: shortDayName(key), count: days[key] || 0 });
@@ -302,15 +337,11 @@ function buildWeekData() {
   return result;
 }
 
-/** @returns {number} Tasa de completado global 0-100 */
 function calcCompletionRate() {
   if (tasks.length === 0) return 0;
   return Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100);
 }
 
-/**
- * Renderiza el contenido del panel de estadísticas en #statsPanel.
- */
 function renderStats() {
   const panel = document.getElementById("statsPanel");
   if (!panel) return;
@@ -354,10 +385,8 @@ function renderStats() {
         <span class="stats-kpi-label">Completado</span>
       </div>
     </div>
-
     <p class="stats-chart-label">Últimos 7 días</p>
     <div class="stats-chart">${barsHTML}</div>
-
     <div class="stats-progress-wrap">
       <div class="stats-progress-track">
         <div class="stats-progress-fill" style="width:${rate}%"></div>
@@ -369,9 +398,6 @@ function renderStats() {
   `;
 }
 
-/**
- * Abre o cierra el panel de estadísticas.
- */
 function toggleStats() {
   statsOpen = !statsOpen;
   const panel = document.getElementById("statsPanel");
@@ -387,18 +413,46 @@ function toggleStats() {
 
 // ─── Renderizado de lista ─────────────────────────────────────────────────────
 
+/** @param {Task} task @returns {string} */
 function buildBadgesHTML(task) {
   const { badgeClass, label } = PRIORITY_CONFIG[task.priority] ?? PRIORITY_CONFIG.optional;
+
+  let dueBadge = "";
+  if (task.dueDate && !task.completed) {
+    const { label: dueLabel, statusClass } = buildDueBadgeInfo(task.dueDate);
+    const isOverdue = getDueStatus(daysUntilDue(task.dueDate)) === DUE_STATUS.OVERDUE;
+    dueBadge = `<span class="${statusClass}${isOverdue ? " pulse" : ""}"
+                      aria-label="Fecha límite: ${dueLabel}">
+                  📅 ${dueLabel}
+                </span>`;
+  } else if (task.dueDate && task.completed) {
+    // Fecha límite apagada en tareas completadas
+    dueBadge = `<span class="badge badge-due badge-due-done">📅 ${task.dueDate}</span>`;
+  }
+
   return `
     <span class="badge badge-cat">${task.category}</span>
     <span class="${badgeClass}">${label}</span>
+    ${dueBadge}
   `;
+}
+
+/**
+ * Devuelve la clase CSS de borde lateral según la urgencia de la fecha límite.
+ * @param {Task} task
+ * @returns {string}
+ */
+function getDueBorderClass(task) {
+  if (!task.dueDate || task.completed) return "";
+  const status = getDueStatus(daysUntilDue(task.dueDate));
+  return `due-border-${status}`;
 }
 
 /** @param {Task} task @returns {HTMLLIElement} */
 function createTaskElement(task) {
   const li = document.createElement("li");
-  li.className = `task-item${task.completed ? " done" : ""}`;
+  const dueBorderClass = getDueBorderClass(task);
+  li.className = `task-item${task.completed ? " done" : ""}${dueBorderClass ? " " + dueBorderClass : ""}`;
   li.setAttribute("role", "listitem");
   li.dataset.id = task.id;
 
