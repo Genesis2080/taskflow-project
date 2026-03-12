@@ -1,48 +1,182 @@
-/* Gradientes de fondo según tema */
-.bg-day {
-  background: linear-gradient(135deg, #fdf6e3, #fdd9b5, #f9c5a1);
+/* ─── Reset & base ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html { font-family: 'DM Sans', sans-serif; }
+
+/* ─── Gradientes de fondo ───────────────────────────────────── */
+body {
+  background: linear-gradient(135deg, #fdf6e3 0%, #fdd9b5 50%, #f9c5a1 100%);
+  transition: background 0.6s ease;
 }
-.bg-night {
-  background: linear-gradient(135deg, #1e293b, #111827, #0f172a);
+.dark body {
+  background: linear-gradient(135deg, #0f172a 0%, #111827 50%, #1e293b 100%);
 }
 
-/* Contenedor día/noche */
-.container-day {
-  background: rgba(255, 255, 255, 0.9);
+/* ─── Contenedor principal ──────────────────────────────────── */
+.card {
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.6);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+  transition: background .5s ease, border .5s ease, box-shadow .5s ease;
+}
+.dark .card {
+  background: rgba(15,23,42,0.94);
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+/* ─── Tipografía de cabecera ────────────────────────────────── */
+.brand { font-family: 'Syne', sans-serif; letter-spacing: -0.03em; }
+
+/* ─── Inputs & selects ──────────────────────────────────────── */
+.field {
+  padding: .55rem .85rem;
+  border-radius: .6rem;
+  border: 1.5px solid #d1d5db;
+  background: #fff;
   color: #111827;
-  transition: all 0.5s ease;
+  font-size: .875rem;
+  font-family: inherit;
+  transition: border-color .2s, box-shadow .2s, background .3s, color .3s;
+  width: 100%;
 }
-.container-night {
-  background: rgba(15, 23, 42, 0.95);
-  color: #e5e7eb;
-  transition: all 0.5s ease;
-}
+.field:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.18); }
+.dark .field { background: #1e293b; border-color: #334155; color: #f1f5f9; }
+.dark .field:focus { border-color: #818cf8; box-shadow: 0 0 0 3px rgba(129,140,248,.18); }
+.field.error { border-color: #ef4444; }
+.field-error-msg { color: #ef4444; font-size: .75rem; margin-top: .2rem; display: none; }
+.field.error + .field-error-msg { display: block; }
 
-/* Scroll personalizado */
-#taskList::-webkit-scrollbar {
-  width: 6px;
+/* ─── Botón añadir ──────────────────────────────────────────── */
+.btn-primary {
+  background: #6366f1;
+  color: #fff;
+  padding: .55rem 1.1rem;
+  border-radius: .6rem;
+  font-weight: 600;
+  font-size: .875rem;
+  border: none;
+  cursor: pointer;
+  transition: background .2s, transform .1s;
+  white-space: nowrap;
 }
-#taskList::-webkit-scrollbar-thumb {
-  background-color: rgba(107, 114, 128, 0.5);
-  border-radius: 3px;
-}
-#taskList::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(107, 114, 128, 0.8);
-}
+.btn-primary:hover  { background: #4f46e5; }
+.btn-primary:active { transform: scale(.97); }
 
-/* Animación de tareas al aparecer */
+/* ─── Filtros ───────────────────────────────────────────────── */
+.filter-btn {
+  flex: 1;
+  padding: .4rem .5rem;
+  border-radius: .55rem;
+  font-size: .8rem;
+  font-weight: 500;
+  border: 1.5px solid transparent;
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: pointer;
+  transition: all .2s;
+}
+.dark .filter-btn { background: #1e293b; color: #94a3b8; }
+.filter-btn.active { background: #6366f1; color: #fff; border-color: #6366f1; }
+.dark .filter-btn.active { background: #818cf8; border-color: #818cf8; color: #0f172a; }
+
+/* ─── Items de tarea ────────────────────────────────────────── */
 .task-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: .75rem;
+  padding: .75rem 1rem;
+  border-radius: .65rem;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
   opacity: 0;
-  transform: translateY(10px);
-  transition: all 0.25s ease;
+  transform: translateY(8px);
+  transition: opacity .25s ease, transform .25s ease, box-shadow .2s, border-color .2s;
 }
-.task-item.show {
-  opacity: 1;
-  transform: translateY(0);
-}
+.dark .task-item { background: #1e293b; border-color: #334155; color: #f1f5f9; }
+.task-item.show   { opacity: 1; transform: translateY(0); }
+.task-item:hover  { box-shadow: 0 4px 16px rgba(0,0,0,.08); border-color: #c7d2fe; }
+.dark .task-item:hover { border-color: #4f46e5; }
+.task-item.done   { opacity: .5; }
+.task-item.done .task-text { text-decoration: line-through; }
 
-/* Hover en tareas */
-.task-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+/* ─── Badges ────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: .15rem .55rem;
+  border-radius: 99px;
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .02em;
 }
+.badge-cat            { background: #e0e7ff; color: #4338ca; }
+.dark .badge-cat      { background: #312e81; color: #c7d2fe; }
+.badge-urgent         { background: #fee2e2; color: #b91c1c; }
+.badge-progress       { background: #fef9c3; color: #92400e; }
+.badge-optional       { background: #dcfce7; color: #166534; }
+.dark .badge-urgent   { background: #7f1d1d; color: #fca5a5; }
+.dark .badge-progress { background: #78350f; color: #fde68a; }
+.dark .badge-optional { background: #14532d; color: #86efac; }
+
+/* ─── Botones de tarea (✔ ✖) ────────────────────────────────── */
+.task-action {
+  padding: .25rem .55rem;
+  border-radius: .45rem;
+  font-size: .8rem;
+  border: none;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+  flex-shrink: 0;
+}
+.task-action:active    { transform: scale(.93); }
+.btn-complete          { background: #d1fae5; color: #065f46; }
+.btn-complete:hover    { background: #6ee7b7; }
+.btn-delete            { background: #fee2e2; color: #991b1b; }
+.btn-delete:hover      { background: #fca5a5; }
+.dark .btn-complete    { background: #064e3b; color: #6ee7b7; }
+.dark .btn-complete:hover { background: #065f46; }
+.dark .btn-delete      { background: #7f1d1d; color: #fca5a5; }
+.dark .btn-delete:hover   { background: #991b1b; }
+
+/* ─── Scrollbar ─────────────────────────────────────────────── */
+#taskList { scrollbar-width: thin; scrollbar-color: #94a3b8 transparent; }
+#taskList::-webkit-scrollbar       { width: 5px; }
+#taskList::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
+
+/* ─── Toggle de tema ────────────────────────────────────────── */
+.toggle-pill {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .35rem .85rem;
+  border-radius: 99px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: .8rem;
+  font-weight: 500;
+  border: 1.5px solid #e2e8f0;
+  cursor: pointer;
+  transition: all .25s;
+}
+.dark .toggle-pill      { background: #1e293b; color: #94a3b8; border-color: #334155; }
+.toggle-pill:hover      { border-color: #6366f1; color: #6366f1; }
+
+/* ─── Estado vacío ──────────────────────────────────────────── */
+.empty-state            { text-align: center; padding: 2rem 1rem; color: #94a3b8; font-size: .875rem; }
+.empty-state .emoji     { font-size: 2rem; display: block; margin-bottom: .5rem; }
+
+/* ─── Contador ──────────────────────────────────────────────── */
+.counter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  background: #e0e7ff;
+  color: #4338ca;
+  padding: .25rem .75rem;
+  border-radius: 99px;
+  font-size: .8rem;
+  font-weight: 600;
+}
+.dark .counter-chip { background: #312e81; color: #c7d2fe; }
