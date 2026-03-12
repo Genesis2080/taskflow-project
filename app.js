@@ -1,33 +1,30 @@
 /**
  * @fileoverview TaskFlow – Gestor de Tareas
- * Lógica principal: gestión de tareas, filtros, persistencia y tema.
  *
- * Mejoras respecto a la versión anterior:
+ * Funcionalidades:
  *  - Constantes centralizadas (STORAGE_KEYS, PRIORITY_CONFIG, FILTER_VALUES)
  *  - Validación del formulario con feedback visual
- *  - Nombres de variables descriptivos (camelCase consistente)
- *  - Separación de responsabilidades por función
- *  - JSDoc en todas las funciones públicas
- *  - Eliminación de duplicidades en renderizado de badges
- *  - Toggle de dark-mode sin necesidad de reemplazar clases manualmente
  *  - Edición inline con doble clic (Enter/blur guarda, Escape cancela)
+ *  - Panel de estadísticas de productividad (desplegable):
+ *      · Tareas completadas hoy
+ *      · Racha de días activos consecutivos
+ *      · Mini gráfico de barras de los últimos 7 días
+ *      · Tasa de completado global con barra de progreso
  */
 
 "use strict";
 
 // ─── Constantes ─────────────────────────────────────────────────────────────
 
-/** Claves usadas para persistencia en localStorage */
 const STORAGE_KEYS = {
-  TASKS:     "taskflow_tasks",
-  DARK_MODE: "taskflow_darkMode",
+  TASKS:          "taskflow_tasks",
+  DARK_MODE:      "taskflow_darkMode",
+  COMPLETED_DAYS: "taskflow_completedDays", // { "YYYY-MM-DD": count }
 };
 
-/** Valores de filtro disponibles */
 const FILTER_VALUES = { ALL: "all", PENDING: "pending", COMPLETED: "completed" };
 
 /**
- * Configuración de prioridades: clase CSS del badge y etiqueta visible.
  * @type {Record<string, {badgeClass: string, label: string}>}
  */
 const PRIORITY_CONFIG = {
@@ -36,94 +33,115 @@ const PRIORITY_CONFIG = {
   optional: { badgeClass: "badge badge-optional", label: "🟢 Opcional"    },
 };
 
-// ─── Estado de la aplicación ─────────────────────────────────────────────────
+// ─── Estado ──────────────────────────────────────────────────────────────────
 
-/** @type {Task[]} Lista de tareas cargadas desde storage */
+/** @type {Task[]} */
 let tasks = loadTasksFromStorage();
 
-/** @type {string} Filtro actualmente activo */
+/** @type {string} */
 let activeFilter = FILTER_VALUES.ALL;
 
-// ─── Tipos (JSDoc) ───────────────────────────────────────────────────────────
+/** @type {boolean} */
+let statsOpen = false;
+
+// ─── Tipos ───────────────────────────────────────────────────────────────────
 
 /**
  * @typedef {Object} Task
- * @property {string}  id        - Identificador único (timestamp + random)
- * @property {string}  text      - Texto de la tarea
- * @property {string}  category  - Categoría seleccionada
- * @property {string}  priority  - Prioridad: "urgent" | "progress" | "optional"
- * @property {boolean} completed - Estado de completado
- * @property {number}  createdAt - Timestamp de creación
+ * @property {string}      id          - Identificador único
+ * @property {string}      text        - Texto de la tarea
+ * @property {string}      category    - Categoría seleccionada
+ * @property {string}      priority    - "urgent" | "progress" | "optional"
+ * @property {boolean}     completed   - Estado de completado
+ * @property {number}      createdAt   - Timestamp de creación
+ * @property {number|null} completedAt - Timestamp de completado (null si pendiente)
  */
 
 // ─── Persistencia ────────────────────────────────────────────────────────────
 
-/**
- * Carga las tareas desde localStorage.
- * @returns {Task[]} Array de tareas (vacío si no existe o hay error de parseo)
- */
 function loadTasksFromStorage() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS)) || [];
   } catch {
-    console.warn("TaskFlow: no se pudo parsear el storage. Se reinicia la lista.");
+    console.warn("TaskFlow: no se pudo parsear el storage.");
     return [];
   }
 }
 
-/**
- * Persiste el array de tareas en localStorage.
- */
 function persistTasks() {
   localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
 }
 
-// ─── Creación de tareas ───────────────────────────────────────────────────────
+/**
+ * Carga el historial de completados por día { "YYYY-MM-DD": count }.
+ * @returns {Record<string, number>}
+ */
+function loadCompletedDays() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.COMPLETED_DAYS)) || {};
+  } catch {
+    return {};
+  }
+}
 
 /**
- * Genera un ID único para cada tarea.
- * @returns {string} Identificador único
+ * @param {Record<string, number>} data
  */
+function persistCompletedDays(data) {
+  localStorage.setItem(STORAGE_KEYS.COMPLETED_DAYS, JSON.stringify(data));
+}
+
+// ─── Helpers de fecha ─────────────────────────────────────────────────────────
+
+/**
+ * Devuelve "YYYY-MM-DD" para un timestamp dado (o hoy si se omite).
+ * @param {number} [ts]
+ * @returns {string}
+ */
+function dateKey(ts) {
+  const d = ts ? new Date(ts) : new Date();
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Nombre corto del día en español para un dateKey.
+ * @param {string} key
+ * @returns {string}
+ */
+function shortDayName(key) {
+  const names = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+  return names[new Date(key + "T12:00:00").getDay()];
+}
+
+// ─── Creación de tareas ───────────────────────────────────────────────────────
+
 function generateTaskId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-/**
- * Valida el texto de la tarea y muestra feedback visual.
- * @param {string} text - Texto introducido por el usuario
- * @returns {boolean} `true` si el texto es válido
- */
 function validateTaskInput(text) {
-  const input     = document.getElementById("taskInput");
-  const errorMsg  = document.getElementById("inputError");
-  const isValid   = text.length > 0 && text.length <= 120;
-
+  const input    = document.getElementById("taskInput");
+  const errorMsg = document.getElementById("inputError");
+  const isValid  = text.length > 0 && text.length <= 120;
   input.classList.toggle("error", !isValid);
   errorMsg.style.display = isValid ? "none" : "block";
   return isValid;
 }
 
-/**
- * Lee el formulario, valida y crea una nueva tarea.
- * Si la validación falla, muestra el error y no añade la tarea.
- */
 function handleAddTask() {
-  const input    = document.getElementById("taskInput");
-  const text     = input.value.trim();
-
-  if (!validateTaskInput(text)) {
-    input.focus();
-    return;
-  }
+  const input = document.getElementById("taskInput");
+  const text  = input.value.trim();
+  if (!validateTaskInput(text)) { input.focus(); return; }
 
   /** @type {Task} */
   const newTask = {
-    id:        generateTaskId(),
+    id:          generateTaskId(),
     text,
-    category:  document.getElementById("categorySelector").value,
-    priority:  document.getElementById("prioritySelector").value,
-    completed: false,
-    createdAt: Date.now(),
+    category:    document.getElementById("categorySelector").value,
+    priority:    document.getElementById("prioritySelector").value,
+    completed:   false,
+    createdAt:   Date.now(),
+    completedAt: null,
   };
 
   tasks.push(newTask);
@@ -133,36 +151,47 @@ function handleAddTask() {
 
   persistTasks();
   renderTaskList();
+  if (statsOpen) renderStats();
 }
 
-// ─── Mutaciones de tarea ─────────────────────────────────────────────────────
+// ─── Mutaciones ───────────────────────────────────────────────────────────────
 
 /**
- * Alterna el estado completado de una tarea por su ID.
- * @param {string} taskId - ID de la tarea a alternar
+ * Alterna completado y actualiza el historial diario.
+ * @param {string} taskId
  */
 function toggleTaskCompletion(taskId) {
   const task = tasks.find(t => t.id === taskId);
   if (!task) return;
-  task.completed = !task.completed;
+
+  task.completed   = !task.completed;
+  task.completedAt = task.completed ? Date.now() : null;
+
+  if (task.completed) {
+    const days = loadCompletedDays();
+    const key  = dateKey();
+    days[key]  = (days[key] || 0) + 1;
+    persistCompletedDays(days);
+  }
+
   persistTasks();
   renderTaskList();
+  if (statsOpen) renderStats();
 }
 
 /**
- * Elimina una tarea del array por su ID.
- * @param {string} taskId - ID de la tarea a eliminar
+ * @param {string} taskId
  */
 function deleteTask(taskId) {
   tasks = tasks.filter(t => t.id !== taskId);
   persistTasks();
   renderTaskList();
+  if (statsOpen) renderStats();
 }
 
 /**
- * Actualiza el texto de una tarea por su ID.
- * @param {string} taskId  - ID de la tarea a actualizar
- * @param {string} newText - Nuevo texto (ya saneado)
+ * @param {string} taskId
+ * @param {string} newText
  */
 function updateTaskText(taskId, newText) {
   const task = tasks.find(t => t.id === taskId);
@@ -175,75 +204,51 @@ function updateTaskText(taskId, newText) {
 
 /**
  * Activa el modo edición inline sobre el <span> de texto de una tarea.
- * - Enter / blur  → guarda si el texto es válido y no está vacío
- * - Escape        → cancela y restaura el texto original
+ * Enter / blur → guarda · Escape → cancela
  *
- * @param {HTMLElement} textSpan - El <span class="task-text"> del item
- * @param {Task}        task     - La tarea asociada
+ * @param {HTMLElement} textSpan
+ * @param {Task}        task
  */
 function enableInlineEdit(textSpan, task) {
-  // Evitar doble activación si ya hay un input abierto
   if (textSpan.querySelector("input")) return;
 
   const originalText = task.text;
+  const editInput    = document.createElement("input");
 
-  // Construir el input de edición
-  const editInput = document.createElement("input");
-  editInput.type        = "text";
-  editInput.value       = originalText;
-  editInput.maxLength   = 120;
-  editInput.className   = "field edit-inline-input";
+  editInput.type      = "text";
+  editInput.value     = originalText;
+  editInput.maxLength = 120;
+  editInput.className = "field edit-inline-input";
   editInput.setAttribute("aria-label", "Editar tarea");
 
-  // Reemplazar el contenido del span por el input
   textSpan.textContent = "";
   textSpan.appendChild(editInput);
   textSpan.classList.add("editing");
 
-  // Enfocar y situar el cursor al final
   editInput.focus();
   editInput.setSelectionRange(editInput.value.length, editInput.value.length);
 
-  /** Guarda los cambios si el nuevo texto es válido */
   function saveEdit() {
     const newText = editInput.value.trim();
-
-    if (newText && newText !== originalText) {
-      updateTaskText(task.id, newText);
-    }
-
-    // Restaurar el span con el texto vigente (guardado o el original)
+    if (newText && newText !== originalText) updateTaskText(task.id, newText);
     textSpan.classList.remove("editing");
     textSpan.textContent = escapeHTML(newText || originalText);
   }
 
-  /** Cancela la edición sin modificar el modelo */
   function cancelEdit() {
     textSpan.classList.remove("editing");
     textSpan.textContent = escapeHTML(originalText);
   }
 
-  // ── Eventos del input ────────────────────────────────────────
   editInput.addEventListener("keydown", e => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      saveEdit();
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      cancelEdit();
-    }
+    if (e.key === "Enter")  { e.preventDefault(); saveEdit();   }
+    if (e.key === "Escape") { e.preventDefault(); cancelEdit(); }
   });
-
-  // blur: guardar al perder el foco (clic fuera)
   editInput.addEventListener("blur", saveEdit, { once: true });
 }
 
 // ─── Filtrado ────────────────────────────────────────────────────────────────
 
-/**
- * Devuelve las tareas según el filtro activo.
- * @returns {Task[]} Tareas filtradas
- */
 function getFilteredTasks() {
   switch (activeFilter) {
     case FILTER_VALUES.PENDING:   return tasks.filter(t => !t.completed);
@@ -252,13 +257,136 @@ function getFilteredTasks() {
   }
 }
 
-// ─── Renderizado ─────────────────────────────────────────────────────────────
+// ─── Estadísticas ─────────────────────────────────────────────────────────────
+
+/** @returns {number} Tareas completadas hoy */
+function countCompletedToday() {
+  const today = dateKey();
+  return tasks.filter(t => t.completed && t.completedAt && dateKey(t.completedAt) === today).length;
+}
+
+/** @returns {number} Racha de días consecutivos con ≥1 completada */
+function calcStreak() {
+  const days  = loadCompletedDays();
+  const today = new Date();
+  let streak  = 0;
+
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    if (days[key] && days[key] > 0) {
+      streak++;
+    } else if (i > 0) {
+      break;
+    }
+  }
+  return streak;
+}
 
 /**
- * Construye el HTML de los badges de categoría y prioridad para una tarea.
- * @param {Task} task - La tarea a la que pertenecen los badges
- * @returns {string} Fragmento HTML con los badges
+ * Datos de los últimos 7 días para el gráfico.
+ * @returns {{ key: string, label: string, count: number }[]}
  */
+function buildWeekData() {
+  const days   = loadCompletedDays();
+  const today  = new Date();
+  const result = [];
+
+  for (let i = 6; i >= 0; i--) {
+    const d   = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    result.push({ key, label: shortDayName(key), count: days[key] || 0 });
+  }
+  return result;
+}
+
+/** @returns {number} Tasa de completado global 0-100 */
+function calcCompletionRate() {
+  if (tasks.length === 0) return 0;
+  return Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100);
+}
+
+/**
+ * Renderiza el contenido del panel de estadísticas en #statsPanel.
+ */
+function renderStats() {
+  const panel = document.getElementById("statsPanel");
+  if (!panel) return;
+
+  const today    = countCompletedToday();
+  const streak   = calcStreak();
+  const weekData = buildWeekData();
+  const rate     = calcCompletionRate();
+  const maxCount = Math.max(...weekData.map(d => d.count), 1);
+  const todayKey = dateKey();
+
+  const barsHTML = weekData.map(d => {
+    const heightPct = Math.round((d.count / maxCount) * 100);
+    const isToday   = d.key === todayKey;
+    return `
+      <div class="stats-bar-col">
+        <span class="stats-bar-count">${d.count > 0 ? d.count : ""}</span>
+        <div class="stats-bar-track">
+          <div class="stats-bar-fill${isToday ? " today" : ""}"
+               style="height:${heightPct}%"
+               title="${d.count} completada(s)"></div>
+        </div>
+        <span class="stats-bar-label${isToday ? " today" : ""}">${d.label}</span>
+      </div>`;
+  }).join("");
+
+  panel.innerHTML = `
+    <div class="stats-kpis">
+      <div class="stats-kpi">
+        <span class="stats-kpi-value">${today}</span>
+        <span class="stats-kpi-label">Hoy</span>
+      </div>
+      <div class="stats-kpi-divider"></div>
+      <div class="stats-kpi">
+        <span class="stats-kpi-value">${streak > 0 ? "🔥&nbsp;" : ""}${streak}</span>
+        <span class="stats-kpi-label">Racha (días)</span>
+      </div>
+      <div class="stats-kpi-divider"></div>
+      <div class="stats-kpi">
+        <span class="stats-kpi-value">${rate}%</span>
+        <span class="stats-kpi-label">Completado</span>
+      </div>
+    </div>
+
+    <p class="stats-chart-label">Últimos 7 días</p>
+    <div class="stats-chart">${barsHTML}</div>
+
+    <div class="stats-progress-wrap">
+      <div class="stats-progress-track">
+        <div class="stats-progress-fill" style="width:${rate}%"></div>
+      </div>
+      <span class="stats-progress-text">
+        ${tasks.filter(t => t.completed).length} / ${tasks.length} tareas completadas
+      </span>
+    </div>
+  `;
+}
+
+/**
+ * Abre o cierra el panel de estadísticas.
+ */
+function toggleStats() {
+  statsOpen = !statsOpen;
+  const panel = document.getElementById("statsPanel");
+  const btn   = document.getElementById("statsBtn");
+  const icon  = document.getElementById("statsIcon");
+
+  panel.classList.toggle("open", statsOpen);
+  btn.classList.toggle("active", statsOpen);
+  icon.textContent = statsOpen ? "▲" : "📊";
+
+  if (statsOpen) renderStats();
+}
+
+// ─── Renderizado de lista ─────────────────────────────────────────────────────
+
 function buildBadgesHTML(task) {
   const { badgeClass, label } = PRIORITY_CONFIG[task.priority] ?? PRIORITY_CONFIG.optional;
   return `
@@ -267,12 +395,7 @@ function buildBadgesHTML(task) {
   `;
 }
 
-/**
- * Crea el elemento <li> para una tarea y enlaza sus eventos.
- * El texto admite doble clic para edición inline.
- * @param {Task} task - Datos de la tarea
- * @returns {HTMLLIElement} Elemento de lista listo para insertar
- */
+/** @param {Task} task @returns {HTMLLIElement} */
 function createTaskElement(task) {
   const li = document.createElement("li");
   li.className = `task-item${task.completed ? " done" : ""}`;
@@ -281,22 +404,20 @@ function createTaskElement(task) {
 
   li.innerHTML = `
     <div class="flex flex-col gap-1 min-w-0">
-      <span class="task-text font-medium text-sm leading-snug truncate" title="Doble clic para editar">${escapeHTML(task.text)}</span>
+      <span class="task-text font-medium text-sm leading-snug truncate"
+            title="Doble clic para editar">${escapeHTML(task.text)}</span>
       <div class="flex flex-wrap gap-1">${buildBadgesHTML(task)}</div>
     </div>
     <div class="flex gap-1 flex-shrink-0 mt-0.5">
-      <button class="task-action btn-complete" aria-label="Marcar como ${task.completed ? 'pendiente' : 'completada'}">✔</button>
-      <button class="task-action btn-delete"   aria-label="Eliminar tarea">✖</button>
+      <button class="task-action btn-complete"
+              aria-label="Marcar como ${task.completed ? "pendiente" : "completada"}">✔</button>
+      <button class="task-action btn-delete" aria-label="Eliminar tarea">✖</button>
     </div>
   `;
 
   const textSpan = li.querySelector(".task-text");
-
-  // ── Edición inline con doble clic ────────────────────────────
   textSpan.addEventListener("dblclick", () => {
-    // No permitir edición en tareas completadas
-    if (task.completed) return;
-    enableInlineEdit(textSpan, task);
+    if (!task.completed) enableInlineEdit(textSpan, task);
   });
 
   li.querySelector(".btn-complete").addEventListener("click", () => toggleTaskCompletion(task.id));
@@ -305,11 +426,6 @@ function createTaskElement(task) {
   return li;
 }
 
-/**
- * Escapa caracteres HTML especiales para prevenir XSS.
- * @param {string} str - Cadena a escapar
- * @returns {string} Cadena segura para insertar en el DOM
- */
 function escapeHTML(str) {
   return str
     .replace(/&/g, "&amp;")
@@ -319,10 +435,6 @@ function escapeHTML(str) {
     .replace(/'/g, "&#039;");
 }
 
-/**
- * Renderiza la lista completa de tareas según el filtro activo.
- * Muestra un estado vacío si no hay resultados.
- */
 function renderTaskList() {
   const taskList      = document.getElementById("taskList");
   const taskCounter   = document.getElementById("taskCounter");
@@ -342,7 +454,6 @@ function renderTaskList() {
     filteredTasks.forEach(task => {
       const li = createTaskElement(task);
       taskList.appendChild(li);
-      // Pequeño delay para que la animación CSS se dispare
       requestAnimationFrame(() => requestAnimationFrame(() => li.classList.add("show")));
     });
   }
@@ -352,10 +463,6 @@ function renderTaskList() {
 
 // ─── Filtros ─────────────────────────────────────────────────────────────────
 
-/**
- * Actualiza el filtro activo y vuelve a renderizar la lista.
- * @param {string} filterValue - Valor del filtro seleccionado
- */
 function applyFilter(filterValue) {
   activeFilter = filterValue;
   document.querySelectorAll(".filter-btn").forEach(btn => {
@@ -366,10 +473,6 @@ function applyFilter(filterValue) {
 
 // ─── Dark mode ───────────────────────────────────────────────────────────────
 
-/**
- * Aplica el estado del dark mode (clase en <html>) y actualiza el botón.
- * @param {boolean} isDark - `true` para activar el modo oscuro
- */
 function applyDarkMode(isDark) {
   document.documentElement.classList.toggle("dark", isDark);
   document.getElementById("darkIcon").textContent  = isDark ? "☀️" : "🌙";
@@ -377,32 +480,21 @@ function applyDarkMode(isDark) {
   localStorage.setItem(STORAGE_KEYS.DARK_MODE, isDark);
 }
 
-/**
- * Alterna el dark mode entre activo e inactivo.
- */
 function toggleDarkMode() {
-  const isDark = !document.documentElement.classList.contains("dark");
-  applyDarkMode(isDark);
+  applyDarkMode(!document.documentElement.classList.contains("dark"));
 }
 
 // ─── Inicialización ───────────────────────────────────────────────────────────
 
-/**
- * Punto de entrada: enlaza eventos y realiza el render inicial.
- */
 function init() {
-  // Restaurar dark mode
   applyDarkMode(localStorage.getItem(STORAGE_KEYS.DARK_MODE) === "true");
 
-  // Botón añadir
   document.getElementById("addBtn").addEventListener("click", handleAddTask);
 
-  // Enter en el input
   document.getElementById("taskInput").addEventListener("keydown", e => {
     if (e.key === "Enter") handleAddTask();
   });
 
-  // Limpiar error al escribir
   document.getElementById("taskInput").addEventListener("input", () => {
     const input = document.getElementById("taskInput");
     if (input.classList.contains("error") && input.value.trim()) {
@@ -411,15 +503,13 @@ function init() {
     }
   });
 
-  // Botones de filtro
   document.querySelectorAll(".filter-btn").forEach(btn => {
     btn.addEventListener("click", () => applyFilter(btn.dataset.filter));
   });
 
-  // Toggle dark mode
   document.getElementById("darkModeBtn").addEventListener("click", toggleDarkMode);
+  document.getElementById("statsBtn").addEventListener("click", toggleStats);
 
-  // Render inicial
   renderTaskList();
 }
 

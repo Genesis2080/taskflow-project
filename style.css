@@ -196,3 +196,188 @@ body {
   width: 100%;
   min-width: 0;
 }
+
+/* ─── Edición inline ────────────────────────────────────────── */
+.task-text { cursor: text; }
+.task-item.done .task-text { cursor: default; }
+
+.edit-inline-input {
+  padding: .2rem .45rem;
+  font-size: .875rem;
+  font-weight: 500;
+  font-family: inherit;
+  line-height: 1.4;
+  border-radius: .4rem;
+  width: 100%;
+  min-width: 0;
+}
+
+/* ─── Botón de estadísticas ─────────────────────────────────── */
+.stats-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .35rem .9rem;
+  border-radius: 99px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: .8rem;
+  font-weight: 500;
+  border: 1.5px solid #e2e8f0;
+  cursor: pointer;
+  transition: all .2s;
+}
+.dark .stats-toggle-btn      { background: #1e293b; color: #94a3b8; border-color: #334155; }
+.stats-toggle-btn:hover,
+.stats-toggle-btn.active      { border-color: #6366f1; color: #6366f1; background: #eef2ff; }
+.dark .stats-toggle-btn:hover,
+.dark .stats-toggle-btn.active{ border-color: #818cf8; color: #818cf8; background: #1e1b4b; }
+
+/* ─── Panel desplegable ─────────────────────────────────────── */
+.stats-panel {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+  transition: max-height .35s ease, opacity .3s ease, margin-top .3s ease;
+}
+.stats-panel.open {
+  max-height: 400px;
+  opacity: 1;
+  margin-top: .75rem;
+}
+
+/* ─── KPIs ──────────────────────────────────────────────────── */
+.stats-kpis {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: .75rem;
+  padding: .75rem .5rem;
+  margin-bottom: .75rem;
+}
+.dark .stats-kpis { background: #0f172a; border-color: #1e293b; }
+
+.stats-kpi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .15rem;
+  flex: 1;
+}
+.stats-kpi-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #4338ca;
+  line-height: 1;
+}
+.dark .stats-kpi-value { color: #818cf8; }
+
+.stats-kpi-label {
+  font-size: .65rem;
+  font-weight: 500;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.stats-kpi-divider {
+  width: 1px;
+  height: 2rem;
+  background: #e2e8f0;
+  flex-shrink: 0;
+}
+.dark .stats-kpi-divider { background: #334155; }
+
+/* ─── Gráfico de barras ─────────────────────────────────────── */
+.stats-chart-label {
+  font-size: .7rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: .4rem;
+}
+.stats-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: .3rem;
+  height: 72px;
+  margin-bottom: .75rem;
+}
+.stats-bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .2rem;
+  flex: 1;
+}
+.stats-bar-count {
+  font-size: .6rem;
+  font-weight: 600;
+  color: #64748b;
+  min-height: .85rem;
+  line-height: 1;
+}
+.dark .stats-bar-count { color: #94a3b8; }
+
+.stats-bar-track {
+  width: 100%;
+  height: 48px;
+  background: #f1f5f9;
+  border-radius: .35rem;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+.dark .stats-bar-track { background: #1e293b; }
+
+.stats-bar-fill {
+  width: 100%;
+  background: #c7d2fe;
+  border-radius: .35rem .35rem 0 0;
+  min-height: 3px;
+  transition: height .4s cubic-bezier(.4,0,.2,1);
+}
+.stats-bar-fill.today { background: #6366f1; }
+.dark .stats-bar-fill         { background: #312e81; }
+.dark .stats-bar-fill.today   { background: #818cf8; }
+
+.stats-bar-label {
+  font-size: .6rem;
+  font-weight: 500;
+  color: #94a3b8;
+  line-height: 1;
+}
+.stats-bar-label.today { color: #6366f1; font-weight: 700; }
+.dark .stats-bar-label.today  { color: #818cf8; }
+
+/* ─── Barra de progreso global ──────────────────────────────── */
+.stats-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+.stats-progress-track {
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.dark .stats-progress-track { background: #1e293b; }
+
+.stats-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #818cf8);
+  border-radius: 99px;
+  transition: width .5s cubic-bezier(.4,0,.2,1);
+  min-width: 0;
+}
+.stats-progress-text {
+  font-size: .7rem;
+  color: #94a3b8;
+  text-align: right;
+}
