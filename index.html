@@ -9,24 +9,24 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex items-start justify-center p-3 sm:p-6 lg:p-8">
 
-  <div class="card w-full max-w-sm p-6 rounded-2xl">
+  <div class="card w-full max-w-2xl p-5 sm:p-7 lg:p-9 rounded-2xl mt-4 sm:mt-8">
 
     <!-- ── Cabecera ─────────────────────────────────────────────── -->
-    <header class="mb-5">
+    <header class="mb-6">
       <div class="flex items-center justify-between mb-1">
-        <h1 class="brand text-2xl text-gray-900 dark:text-white">TaskFlow</h1>
+        <h1 class="brand text-3xl sm:text-4xl text-gray-900 dark:text-white">TaskFlow</h1>
         <button id="darkModeBtn" class="toggle-pill" aria-label="Cambiar tema">
           <span id="darkIcon">🌙</span>
           <span id="darkLabel">Noche</span>
         </button>
       </div>
-      <p class="text-xs text-gray-500 dark:text-gray-400">Organiza tu día de forma eficiente</p>
+      <p class="text-sm text-gray-500 dark:text-gray-400">Organiza tu día de forma eficiente</p>
     </header>
 
     <!-- ── Formulario de nueva tarea ────────────────────────────── -->
-    <section aria-label="Añadir tarea" class="flex flex-col gap-2 mb-4">
+    <section aria-label="Añadir tarea" class="flex flex-col gap-3 mb-5">
 
       <div>
         <input id="taskInput" type="text" maxlength="120"
@@ -35,7 +35,8 @@
         <p class="field-error-msg" id="inputError">El nombre de la tarea no puede estar vacío.</p>
       </div>
 
-      <div class="flex gap-2">
+      <!-- En desktop los selectores y la fecha van en una fila -->
+      <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
         <select id="categorySelector" class="field" aria-label="Categoría">
           <option value="General">📋 General</option>
           <option value="Trabajo">💼 Trabajo</option>
@@ -48,33 +49,49 @@
           <option value="progress">🟡 En progreso</option>
           <option value="optional">🟢 Opcional</option>
         </select>
+
+        <!-- Fecha límite inline en la misma fila en desktop -->
+        <div class="due-date-row sm:flex-1">
+          <label for="dueDateInput" class="due-date-label">
+            📅 <span class="due-date-optional hidden sm:inline">Fecha límite</span>
+          </label>
+          <input id="dueDateInput" type="date" class="field due-date-field"
+                 aria-label="Fecha límite de la tarea" />
+        </div>
       </div>
 
-      <!-- ── Fecha límite ───────────────────────────────────────── -->
-      <div class="due-date-row">
-        <label for="dueDateInput" class="due-date-label">
-          📅 Fecha límite <span class="due-date-optional">(opcional)</span>
-        </label>
-        <input id="dueDateInput" type="date" class="field due-date-field"
-               aria-label="Fecha límite de la tarea" />
-      </div>
-
-      <button id="addBtn" class="btn-primary">+ Añadir tarea</button>
+      <button id="addBtn" class="btn-primary self-stretch sm:self-end sm:px-8">
+        + Añadir tarea
+      </button>
     </section>
 
-    <!-- ── Filtros ───────────────────────────────────────────────── -->
-    <nav aria-label="Filtros de tareas" class="flex gap-2 mb-4">
-      <button class="filter-btn active" data-filter="all">Todas</button>
-      <button class="filter-btn" data-filter="pending">Pendientes</button>
-      <button class="filter-btn" data-filter="completed">Completadas</button>
-    </nav>
+    <!-- ── Filtros + Acciones masivas ────────────────────────────── -->
+    <div class="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between mb-4">
+      <nav aria-label="Filtros de tareas" class="flex gap-2">
+        <button class="filter-btn active" data-filter="all">Todas</button>
+        <button class="filter-btn" data-filter="pending">Pendientes</button>
+        <button class="filter-btn" data-filter="completed">Completadas</button>
+      </nav>
+
+      <!-- Acciones masivas alineadas a la derecha en desktop -->
+      <div class="bulk-actions" aria-label="Acciones masivas">
+        <button id="completeAllBtn" class="bulk-btn bulk-btn-complete hidden"
+                aria-label="Marcar todas las tareas como completadas">
+          ✔ Completar todas
+        </button>
+        <button id="deleteAllBtn" class="bulk-btn bulk-btn-delete hidden"
+                aria-label="Eliminar todas las tareas">
+          ✖ Eliminar todas
+        </button>
+      </div>
+    </div>
 
     <!-- ── Lista de tareas ───────────────────────────────────────── -->
     <ul id="taskList" role="list" aria-label="Lista de tareas"
-        class="space-y-2 max-h-72 overflow-y-auto pr-0.5"></ul>
+        class="space-y-2 overflow-y-auto pr-0.5 task-list"></ul>
 
     <!-- ── Contador ──────────────────────────────────────────────── -->
-    <footer class="flex justify-center mt-4">
+    <footer class="flex justify-center mt-5">
       <div class="counter-chip">
         <span>⏳</span>
         <span id="taskCounter">0</span>
@@ -95,7 +112,7 @@
 
   </div>
 
-  <!-- ── Toast de undo (fijo en pantalla, fuera del card) ─────────── -->
+  <!-- ── Toast de undo ────────────────────────────────────────────── -->
   <div id="undoToast" role="status" aria-live="polite">
     <div id="undoProgressBar"></div>
     <div class="undo-toast-body">

@@ -3,11 +3,13 @@
  *
  * Funcionalidades:
  *  - Gestión de tareas (añadir, completar, eliminar)
+ *  - Completar todas las tareas de un clic
+ *  - Eliminar todas las tareas de un clic (con undo global)
  *  - Filtros (todas, pendientes, completadas)
  *  - Persistencia en localStorage
  *  - Dark mode
- *  - Edición inline con doble clic (Enter/blur guarda · Escape cancela)
- *  - Panel de estadísticas de productividad (desplegable)
+ *  - Edición inline con doble clic
+ *  - Panel de estadísticas de productividad
  *  - Fechas límite con alertas visuales
  *  - Sonido de completado (Web Audio API)
  *  - Undo al eliminar: toast 5 s con barra de progreso y restauración posicional
@@ -39,7 +41,6 @@ const DUE_STATUS = {
   OK:       "ok",
 };
 
-/** Tiempo en ms que el toast de undo permanece visible */
 const UNDO_TIMEOUT_MS = 5000;
 
 // ─── Estado ──────────────────────────────────────────────────────────────────
@@ -57,8 +58,8 @@ let statsOpen = false;
 let audioCtx = null;
 
 /**
- * Undo pendiente tras un borrado.
- * @type {{ task: Task, index: number, timerId: number } | null}
+ * Undo pendiente tras un borrado individual o masivo.
+ * @type {{ tasks: Task[], label: string, timerId: number } | null}
  */
 let pendingUndo = null;
 
@@ -200,6 +201,23 @@ function playUncompleteSound() {
   } catch (e) { console.warn("TaskFlow: playUncompleteSound", e); }
 }
 
+/**
+ * Acorde de fanfare corto para "completar todas".
+ * Do mayor extendido con un final brillante.
+ */
+function playCompleteAllSound() {
+  try {
+    const ctx = getAudioContext();
+    const t   = ctx.currentTime;
+    const v   = 0.15;
+    playNote(ctx, 523.25, t,        0.22, v,        "triangle"); // Do5
+    playNote(ctx, 659.25, t + 0.05, 0.22, v * 0.9,  "triangle"); // Mi5
+    playNote(ctx, 783.99, t + 0.10, 0.22, v * 0.85, "triangle"); // Sol5
+    playNote(ctx, 1046.5, t + 0.16, 0.30, v * 0.7,  "triangle"); // Do6
+    playNote(ctx, 1318.5, t + 0.22, 0.38, v * 0.55, "sine");     // Mi6
+  } catch (e) { console.warn("TaskFlow: playCompleteAllSound", e); }
+}
+
 // ─── Creación de tareas ───────────────────────────────────────────────────────
 
 function generateTaskId() {
@@ -242,10 +260,11 @@ function handleAddTask() {
 
   persistTasks();
   renderTaskList();
+  updateBulkButtons();
   if (statsOpen) renderStats();
 }
 
-// ─── Mutaciones ───────────────────────────────────────────────────────────────
+// ─── Mutaciones individuales ──────────────────────────────────────────────────
 
 /** @param {string} taskId */
 function toggleTaskCompletion(taskId) {
@@ -267,18 +286,69 @@ function toggleTaskCompletion(taskId) {
 
   persistTasks();
   renderTaskList();
+  updateBulkButtons();
   if (statsOpen) renderStats();
+}
+
+// ─── Acciones masivas ─────────────────────────────────────────────────────────
+
+/**
+ * Marca todas las tareas pendientes como completadas.
+ * Solo actúa si hay al menos una tarea pendiente.
+ */
+function completeAllTasks() {
+  const pending = tasks.filter(t => !t.completed);
+  if (pending.length === 0) return;
+
+  const now    = Date.now();
+  const days   = loadCompletedDays();
+  const key    = dateKey();
+
+  pending.forEach(task => {
+    task.completed   = true;
+    task.completedAt = now;
+    days[key] = (days[key] || 0) + 1;
+  });
+
+  persistCompletedDays(days);
+  persistTasks();
+  playCompleteAllSound();
+  renderTaskList();
+  updateBulkButtons();
+  if (statsOpen) renderStats();
+}
+
+/**
+ * Elimina todas las tareas con posibilidad de deshacer.
+ * Guarda una copia completa del array para poder restaurarlo.
+ */
+function deleteAllTasks() {
+  if (tasks.length === 0) return;
+
+  // Confirmar un undo individual previo si lo hubiera
+  if (pendingUndo) commitDelete();
+
+  const snapshot = [...tasks];
+  tasks = [];
+
+  const timerId = setTimeout(commitDelete, UNDO_TIMEOUT_MS);
+  pendingUndo   = { tasks: snapshot, label: "todas las tareas", timerId };
+
+  persistTasks();
+  renderTaskList();
+  updateBulkButtons();
+  if (statsOpen) renderStats();
+  showUndoToast(`${snapshot.length} tarea${snapshot.length !== 1 ? "s" : ""} eliminada${snapshot.length !== 1 ? "s" : ""}`);
 }
 
 // ─── Undo al eliminar ─────────────────────────────────────────────────────────
 
 /**
- * Elimina una tarea iniciando una ventana de 5 s para deshacer.
+ * Elimina una tarea individual iniciando una ventana de 5 s para deshacer.
  * Si ya hay un borrado pendiente, lo confirma antes de proceder.
  * @param {string} taskId
  */
 function deleteTask(taskId) {
-  // Confirmar borrado anterior pendiente
   if (pendingUndo) commitDelete();
 
   const index = tasks.findIndex(t => t.id === taskId);
@@ -287,12 +357,14 @@ function deleteTask(taskId) {
   const [removedTask] = tasks.splice(index, 1);
   const timerId = setTimeout(commitDelete, UNDO_TIMEOUT_MS);
 
-  pendingUndo = { task: removedTask, index, timerId };
+  // Almacenamos como array de un elemento para unificar la lógica de restore
+  pendingUndo = { tasks: [removedTask], index, label: `"${removedTask.text}"`, timerId };
 
   persistTasks();
   renderTaskList();
+  updateBulkButtons();
   if (statsOpen) renderStats();
-  showUndoToast(removedTask.text);
+  showUndoToast(`"${removedTask.text.length > 32 ? removedTask.text.slice(0, 32) + "…" : removedTask.text}" eliminada`);
 }
 
 /**
@@ -306,49 +378,68 @@ function commitDelete() {
 }
 
 /**
- * Restaura la tarea eliminada en su posición original.
+ * Restaura las tareas eliminadas.
+ * - Borrado individual → reinserta en la posición original.
+ * - Borrado masivo     → restaura el array completo.
  */
 function undoDelete() {
   if (!pendingUndo) return;
   clearTimeout(pendingUndo.timerId);
 
-  const { task, index } = pendingUndo;
-  tasks.splice(index, 0, task);
+  if (typeof pendingUndo.index === "number") {
+    // Borrado individual: reinserta en posición exacta
+    tasks.splice(pendingUndo.index, 0, pendingUndo.tasks[0]);
+  } else {
+    // Borrado masivo: restaurar snapshot completo
+    tasks = [...pendingUndo.tasks];
+  }
+
   pendingUndo = null;
 
   persistTasks();
   renderTaskList();
+  updateBulkButtons();
   if (statsOpen) renderStats();
   hideUndoToast();
 }
 
 /**
- * Muestra el toast con mensaje y barra de progreso animada.
- * @param {string} taskText
+ * Muestra el toast de undo con barra de progreso animada.
+ * @param {string} message
  */
-function showUndoToast(taskText) {
-  const toast   = document.getElementById("undoToast");
-  const msg     = document.getElementById("undoMsg");
-  const bar     = document.getElementById("undoProgressBar");
-  const preview = taskText.length > 32 ? taskText.slice(0, 32) + "…" : taskText;
+function showUndoToast(message) {
+  const toast = document.getElementById("undoToast");
+  const msg   = document.getElementById("undoMsg");
+  const bar   = document.getElementById("undoProgressBar");
 
-  msg.textContent = `"${preview}" eliminada`;
+  msg.textContent = message;
 
-  // Reiniciar la animación de la barra
   bar.style.transition = "none";
   bar.style.width      = "100%";
-  bar.getBoundingClientRect(); // forzar reflow
+  bar.getBoundingClientRect();
   bar.style.transition = `width ${UNDO_TIMEOUT_MS}ms linear`;
   bar.style.width      = "0%";
 
   toast.classList.add("show");
 }
 
-/**
- * Oculta el toast de undo.
- */
 function hideUndoToast() {
   document.getElementById("undoToast").classList.remove("show");
+}
+
+// ─── Botones de acción masiva (visibilidad) ───────────────────────────────────
+
+/**
+ * Muestra u oculta los botones de acción masiva según el estado de la lista.
+ * - "Completar todas" → visible si hay al menos una tarea pendiente.
+ * - "Eliminar todas"  → visible si hay al menos una tarea en total.
+ */
+function updateBulkButtons() {
+  const hasTasks   = tasks.length > 0;
+  const hasPending = tasks.some(t => !t.completed);
+
+  document.getElementById("completeAllBtn").classList.toggle("hidden", !hasPending);
+  document.getElementById("deleteAllBtn").classList.toggle("hidden", !hasTasks);
 }
 
 // ─── Edición inline ───────────────────────────────────────────────────────────
@@ -658,11 +749,13 @@ function init() {
   document.getElementById("darkModeBtn").addEventListener("click", toggleDarkMode);
   document.getElementById("statsBtn").addEventListener("click", toggleStats);
   document.getElementById("undoBtn").addEventListener("click", undoDelete);
+  document.getElementById("completeAllBtn").addEventListener("click", completeAllTasks);
+  document.getElementById("deleteAllBtn").addEventListener("click", deleteAllTasks);
 
-  // Precalentar AudioContext en el primer gesto del usuario
   document.addEventListener("click", () => getAudioContext(), { once: true });
 
   renderTaskList();
+  updateBulkButtons();
 }
 
 document.addEventListener("DOMContentLoaded", init);
