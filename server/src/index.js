@@ -1,6 +1,7 @@
 const express = require('express');
 const cors    = require('cors');
 const { PORT } = require('./config/env');
+const taskRoutes = require('./routes/task.routes');
 
 const app = express();
 
