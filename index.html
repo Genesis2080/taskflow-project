@@ -85,7 +85,15 @@
         </button>
       </div>
     </div>
+    <!-- Indicador de carga -->
+    <div id="loadingIndicator" class="loading-indicator" style="display:none">
+      <div class="loading-spinner"></div>
+      <span>Cargando tareas...</span>
+    </div>
 
+    <!-- ── Banner de error de red ────────────────────────────────────── -->
+    <div id="networkError" class="network-error-banner"></div>
+    
     <!-- ── Lista de tareas ───────────────────────────────────────── -->
     <ul id="taskList" role="list" aria-label="Lista de tareas"
         class="space-y-2 overflow-y-auto pr-0.5 task-list"></ul>

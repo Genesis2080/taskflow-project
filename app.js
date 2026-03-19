@@ -1,18 +1,12 @@
 /**
- * @fileoverview TaskFlow – Gestor de Tareas
+ * @fileoverview TaskFlow – Gestor de Tareas (Fase D)
  *
- * Funcionalidades:
- *  - Gestión de tareas (añadir, completar, eliminar)
- *  - Completar todas las tareas de un clic
- *  - Eliminar todas las tareas de un clic (con undo global)
- *  - Filtros (todas, pendientes, completadas)
- *  - Persistencia en localStorage
- *  - Dark mode
- *  - Edición inline con doble clic
- *  - Panel de estadísticas de productividad
- *  - Fechas límite con alertas visuales
- *  - Sonido de completado (Web Audio API)
- *  - Undo al eliminar: toast 5 s con barra de progreso y restauración posicional
+ * Cambios respecto a la versión anterior:
+ *  - Eliminado localStorage de tareas (las tareas viven en el servidor)
+ *  - Las tareas se cargan desde la API al arrancar (fetchTasks)
+ *  - handleAddTask, deleteTask y toggleTaskCompletion son async
+ *  - Tres estados de red: carga (spinner), éxito (lista), error (banner)
+ *  - Se mantiene localStorage solo para darkMode y completedDays
  */
 
 "use strict";
@@ -20,7 +14,7 @@
 // ─── Constantes ─────────────────────────────────────────────────────────────
 
 const STORAGE_KEYS = {
-  TASKS:          "taskflow_tasks",
+  // TASKS eliminado: las tareas ahora viven en el servidor
   DARK_MODE:      "taskflow_darkMode",
   COMPLETED_DAYS: "taskflow_completedDays",
 };
@@ -45,8 +39,8 @@ const UNDO_TIMEOUT_MS = 5000;
 
 // ─── Estado ──────────────────────────────────────────────────────────────────
 
-/** @type {Task[]} */
-let tasks = loadTasksFromStorage();
+/** @type {Task[]} Cargado desde el servidor, no desde localStorage */
+let tasks = [];
 
 /** @type {string} */
 let activeFilter = FILTER_VALUES.ALL;
@@ -58,8 +52,7 @@ let statsOpen = false;
 let audioCtx = null;
 
 /**
- * Undo pendiente tras un borrado individual o masivo.
- * @type {{ tasks: Task[], label: string, timerId: number } | null}
+ * @type {{ tasks: Task[], index?: number, timerId: number } | null}
  */
 let pendingUndo = null;
 
@@ -77,20 +70,78 @@ let pendingUndo = null;
  * @property {string|null} dueDate
  */
 
-// ─── Persistencia ────────────────────────────────────────────────────────────
+// ─── Capa de red (client.js inline) ──────────────────────────────────────────
+// Si prefieres, mueve estas funciones a src/api/client.js y carga ese archivo
+// con <script src="src/api/client.js"> antes de app.js en el HTML.
 
-function loadTasksFromStorage() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS)) || [];
-  } catch {
-    console.warn("TaskFlow: error al leer el storage.");
-    return [];
+const API_URL = "http://localhost:3000/api/v1/tasks";
+
+/**
+ * Obtiene todas las tareas del servidor.
+ * @returns {Promise<Task[]>}
+ */
+async function apiFetchTasks() {
+  const response = await fetch(API_URL);
+  if (!response.ok) throw new Error(`Error al obtener tareas: ${response.status}`);
+  return response.json();
+}
+
+/**
+ * Crea una tarea en el servidor.
+ * @param {Object} taskData
+ * @returns {Promise<Task>}
+ */
+async function apiCreateTask(taskData) {
+  const response = await fetch(API_URL, {
+    method:  "POST",
+    headers: { "Content-Type": "application/json" },
+    body:    JSON.stringify(taskData),
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error || "Error al crear la tarea");
+  }
+  return response.json();
+}
+
+/**
+ * Elimina una tarea en el servidor.
+ * @param {string} id
+ * @returns {Promise<void>}
+ */
+async function apiDeleteTask(id) {
+  const response = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+  if (!response.ok && response.status !== 204) {
+    const err = await response.json();
+    throw new Error(err.error || "Error al eliminar la tarea");
   }
 }
 
-function persistTasks() {
-  localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
+// ─── Estados de red ───────────────────────────────────────────────────────────
+
+/**
+ * Muestra u oculta el spinner de carga sobre la lista.
+ * @param {boolean} isLoading
+ */
+function setLoadingState(isLoading) {
+  const taskList = document.getElementById("taskList");
+  const loader   = document.getElementById("loadingIndicator");
+  taskList.style.opacity = isLoading ? "0.4" : "1";
+  loader.style.display   = isLoading ? "flex" : "none";
 }
+
+/**
+ * Muestra un banner de error de red durante 5 segundos.
+ * @param {string} message
+ */
+function showNetworkError(message) {
+  const banner = document.getElementById("networkError");
+  banner.textContent = `⚠️ ${message}`;
+  banner.classList.add("show");
+  setTimeout(() => banner.classList.remove("show"), 5000);
+}
+
+// ─── Persistencia local (solo estadísticas y tema) ────────────────────────────
 
 /** @returns {Record<string,number>} */
 function loadCompletedDays() {
@@ -154,14 +205,6 @@ function getAudioContext() {
   return audioCtx;
 }
 
-/**
- * @param {AudioContext}                           ctx
- * @param {number}                                 frequency
- * @param {number}                                 startTime
- * @param {number}                                 duration
- * @param {number}                                 peakGain
- * @param {"sine"|"triangle"|"square"|"sawtooth"} [type]
- */
 function playNote(ctx, frequency, startTime, duration, peakGain, type = "sine") {
   const osc  = ctx.createOscillator();
   const gain = ctx.createGain();
@@ -201,28 +244,20 @@ function playUncompleteSound() {
   } catch (e) { console.warn("TaskFlow: playUncompleteSound", e); }
 }
 
-/**
- * Acorde de fanfare corto para "completar todas".
- * Do mayor extendido con un final brillante.
- */
 function playCompleteAllSound() {
   try {
     const ctx = getAudioContext();
     const t   = ctx.currentTime;
     const v   = 0.15;
-    playNote(ctx, 523.25, t,        0.22, v,        "triangle"); // Do5
-    playNote(ctx, 659.25, t + 0.05, 0.22, v * 0.9,  "triangle"); // Mi5
-    playNote(ctx, 783.99, t + 0.10, 0.22, v * 0.85, "triangle"); // Sol5
-    playNote(ctx, 1046.5, t + 0.16, 0.30, v * 0.7,  "triangle"); // Do6
-    playNote(ctx, 1318.5, t + 0.22, 0.38, v * 0.55, "sine");     // Mi6
+    playNote(ctx, 523.25, t,        0.22, v,        "triangle");
+    playNote(ctx, 659.25, t + 0.05, 0.22, v * 0.9,  "triangle");
+    playNote(ctx, 783.99, t + 0.10, 0.22, v * 0.85, "triangle");
+    playNote(ctx, 1046.5, t + 0.16, 0.30, v * 0.7,  "triangle");
+    playNote(ctx, 1318.5, t + 0.22, 0.38, v * 0.55, "sine");
   } catch (e) { console.warn("TaskFlow: playCompleteAllSound", e); }
 }
 
-// ─── Creación de tareas ───────────────────────────────────────────────────────
-
-function generateTaskId() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-}
+// ─── Validación del formulario ────────────────────────────────────────────────
 
 function validateTaskInput(text) {
   const input    = document.getElementById("taskInput");
@@ -233,40 +268,45 @@ function validateTaskInput(text) {
   return isValid;
 }
 
-function handleAddTask() {
+// ─── Añadir tarea (async) ─────────────────────────────────────────────────────
+
+async function handleAddTask() {
   const input = document.getElementById("taskInput");
   const text  = input.value.trim();
   if (!validateTaskInput(text)) { input.focus(); return; }
 
   const dueDateRaw = document.getElementById("dueDateInput").value;
 
-  /** @type {Task} */
-  const newTask = {
-    id:          generateTaskId(),
-    text,
-    category:    document.getElementById("categorySelector").value,
-    priority:    document.getElementById("prioritySelector").value,
-    completed:   false,
-    createdAt:   Date.now(),
-    completedAt: null,
-    dueDate:     dueDateRaw || null,
-  };
+  try {
+    setLoadingState(true);
 
-  tasks.push(newTask);
-  input.value = "";
-  document.getElementById("dueDateInput").value = "";
-  input.classList.remove("error");
-  document.getElementById("inputError").style.display = "none";
+    const newTask = await apiCreateTask({
+      text,
+      category:  document.getElementById("categorySelector").value,
+      priority:  document.getElementById("prioritySelector").value,
+      dueDate:   dueDateRaw || null,
+      completed: false,
+    });
 
-  persistTasks();
-  renderTaskList();
-  updateBulkButtons();
-  if (statsOpen) renderStats();
+    tasks.push(newTask);
+    input.value = "";
+    document.getElementById("dueDateInput").value = "";
+    input.classList.remove("error");
+    document.getElementById("inputError").style.display = "none";
+
+    renderTaskList();
+    updateBulkButtons();
+    if (statsOpen) renderStats();
+
+  } catch (err) {
+    showNetworkError(err.message);
+  } finally {
+    setLoadingState(false);
+  }
 }
 
-// ─── Mutaciones individuales ──────────────────────────────────────────────────
+// ─── Completar tarea (local, sin endpoint PUT por ahora) ──────────────────────
 
-/** @param {string} taskId */
 function toggleTaskCompletion(taskId) {
   const task = tasks.find(t => t.id === taskId);
   if (!task) return;
@@ -284,25 +324,20 @@ function toggleTaskCompletion(taskId) {
     playUncompleteSound();
   }
 
-  persistTasks();
   renderTaskList();
   updateBulkButtons();
   if (statsOpen) renderStats();
 }
 
-// ─── Acciones masivas ─────────────────────────────────────────────────────────
+// ─── Completar todas ──────────────────────────────────────────────────────────
 
-/**
- * Marca todas las tareas pendientes como completadas.
- * Solo actúa si hay al menos una tarea pendiente.
- */
 function completeAllTasks() {
   const pending = tasks.filter(t => !t.completed);
   if (pending.length === 0) return;
 
-  const now    = Date.now();
-  const days   = loadCompletedDays();
-  const key    = dateKey();
+  const now  = Date.now();
+  const days = loadCompletedDays();
+  const key  = dateKey();
 
   pending.forEach(task => {
     task.completed   = true;
@@ -311,65 +346,76 @@ function completeAllTasks() {
   });
 
   persistCompletedDays(days);
-  persistTasks();
   playCompleteAllSound();
   renderTaskList();
   updateBulkButtons();
   if (statsOpen) renderStats();
 }
 
-/**
- * Elimina todas las tareas con posibilidad de deshacer.
- * Guarda una copia completa del array para poder restaurarlo.
- */
-function deleteAllTasks() {
-  if (tasks.length === 0) return;
+// ─── Eliminar tarea (async) ───────────────────────────────────────────────────
 
-  // Confirmar un undo individual previo si lo hubiera
-  if (pendingUndo) commitDelete();
-
-  const snapshot = [...tasks];
-  tasks = [];
-
-  const timerId = setTimeout(commitDelete, UNDO_TIMEOUT_MS);
-  pendingUndo   = { tasks: snapshot, label: "todas las tareas", timerId };
-
-  persistTasks();
-  renderTaskList();
-  updateBulkButtons();
-  if (statsOpen) renderStats();
-  showUndoToast(`${snapshot.length} tarea${snapshot.length !== 1 ? "s" : ""} eliminada${snapshot.length !== 1 ? "s" : ""}`);
-}
-
-// ─── Undo al eliminar ─────────────────────────────────────────────────────────
-
-/**
- * Elimina una tarea individual iniciando una ventana de 5 s para deshacer.
- * Si ya hay un borrado pendiente, lo confirma antes de proceder.
- * @param {string} taskId
- */
-function deleteTask(taskId) {
+async function deleteTask(taskId) {
   if (pendingUndo) commitDelete();
 
   const index = tasks.findIndex(t => t.id === taskId);
   if (index === -1) return;
 
   const [removedTask] = tasks.splice(index, 1);
+
+  try {
+    await apiDeleteTask(removedTask.id);
+  } catch (err) {
+    // El servidor falló: revertimos el borrado local
+    tasks.splice(index, 0, removedTask);
+    showNetworkError(err.message);
+    renderTaskList();
+    return;
+  }
+
   const timerId = setTimeout(commitDelete, UNDO_TIMEOUT_MS);
+  pendingUndo   = { tasks: [removedTask], index, timerId };
 
-  // Almacenamos como array de un elemento para unificar la lógica de restore
-  pendingUndo = { tasks: [removedTask], index, label: `"${removedTask.text}"`, timerId };
-
-  persistTasks();
   renderTaskList();
   updateBulkButtons();
   if (statsOpen) renderStats();
-  showUndoToast(`"${removedTask.text.length > 32 ? removedTask.text.slice(0, 32) + "…" : removedTask.text}" eliminada`);
+
+  const preview = removedTask.text.length > 32
+    ? removedTask.text.slice(0, 32) + "…"
+    : removedTask.text;
+  showUndoToast(`"${preview}" eliminada`);
 }
 
-/**
- * Confirma el borrado pendiente y oculta el toast.
- */
+// ─── Eliminar todas (async) ───────────────────────────────────────────────────
+
+async function deleteAllTasks() {
+  if (tasks.length === 0) return;
+  if (pendingUndo) commitDelete();
+
+  const snapshot = [...tasks];
+  tasks = [];
+
+  // Eliminar cada tarea en el servidor en paralelo
+  try {
+    await Promise.all(snapshot.map(t => apiDeleteTask(t.id)));
+  } catch (err) {
+    // Si alguna falla, restauramos todo
+    tasks = snapshot;
+    showNetworkError("No se pudieron eliminar todas las tareas.");
+    renderTaskList();
+    return;
+  }
+
+  const timerId = setTimeout(commitDelete, UNDO_TIMEOUT_MS);
+  pendingUndo   = { tasks: snapshot, timerId };
+
+  renderTaskList();
+  updateBulkButtons();
+  if (statsOpen) renderStats();
+  showUndoToast(`${snapshot.length} tarea${snapshot.length !== 1 ? "s" : ""} eliminada${snapshot.length !== 1 ? "s" : ""}`);
+}
+
+// ─── Undo ─────────────────────────────────────────────────────────────────────
+
 function commitDelete() {
   if (!pendingUndo) return;
   clearTimeout(pendingUndo.timerId);
@@ -377,36 +423,40 @@ function commitDelete() {
   hideUndoToast();
 }
 
-/**
- * Restaura las tareas eliminadas.
- * - Borrado individual → reinserta en la posición original.
- * - Borrado masivo     → restaura el array completo.
- */
-function undoDelete() {
+async function undoDelete() {
   if (!pendingUndo) return;
   clearTimeout(pendingUndo.timerId);
 
-  if (typeof pendingUndo.index === "number") {
-    // Borrado individual: reinserta en posición exacta
-    tasks.splice(pendingUndo.index, 0, pendingUndo.tasks[0]);
-  } else {
-    // Borrado masivo: restaurar snapshot completo
-    tasks = [...pendingUndo.tasks];
-  }
-
+  const { tasks: restoredTasks, index } = pendingUndo;
   pendingUndo = null;
 
-  persistTasks();
+  try {
+    // Recrear las tareas en el servidor
+    const recreated = await Promise.all(
+      restoredTasks.map(t => apiCreateTask({
+        text:      t.text,
+        category:  t.category,
+        priority:  t.priority,
+        dueDate:   t.dueDate,
+        completed: t.completed,
+      }))
+    );
+
+    if (typeof index === "number") {
+      tasks.splice(index, 0, recreated[0]);
+    } else {
+      tasks = recreated;
+    }
+  } catch (err) {
+    showNetworkError("No se pudo deshacer la eliminación.");
+  }
+
   renderTaskList();
   updateBulkButtons();
   if (statsOpen) renderStats();
   hideUndoToast();
 }
 
-/**
- * Muestra el toast de undo con barra de progreso animada.
- * @param {string} message
- */
 function showUndoToast(message) {
   const toast = document.getElementById("undoToast");
   const msg   = document.getElementById("undoMsg");
@@ -427,27 +477,17 @@ function hideUndoToast() {
   document.getElementById("undoToast").classList.remove("show");
 }
 
-// ─── Botones de acción masiva (visibilidad) ───────────────────────────────────
+// ─── Botones de acción masiva ─────────────────────────────────────────────────
 
-/**
- * Muestra u oculta los botones de acción masiva según el estado de la lista.
- * - "Completar todas" → visible si hay al menos una tarea pendiente.
- * - "Eliminar todas"  → visible si hay al menos una tarea en total.
- */
 function updateBulkButtons() {
   const hasTasks   = tasks.length > 0;
   const hasPending = tasks.some(t => !t.completed);
-
   document.getElementById("completeAllBtn").classList.toggle("hidden", !hasPending);
   document.getElementById("deleteAllBtn").classList.toggle("hidden", !hasTasks);
 }
 
 // ─── Edición inline ───────────────────────────────────────────────────────────
 
-/**
- * @param {HTMLElement} textSpan
- * @param {Task}        task
- */
 function enableInlineEdit(textSpan, task) {
   if (textSpan.querySelector("input")) return;
 
@@ -469,7 +509,7 @@ function enableInlineEdit(textSpan, task) {
     const newText = editInput.value.trim();
     if (newText && newText !== originalText) {
       const t = tasks.find(t => t.id === task.id);
-      if (t) { t.text = newText; persistTasks(); }
+      if (t) t.text = newText;
     }
     textSpan.classList.remove("editing");
     textSpan.textContent = escapeHTML(newText || originalText);
@@ -518,7 +558,6 @@ function calcStreak() {
   return streak;
 }
 
-/** @returns {{ key:string, label:string, count:number }[]} */
 function buildWeekData() {
   const days   = loadCompletedDays();
   const today  = new Date();
@@ -606,7 +645,6 @@ function toggleStats() {
 
 // ─── Renderizado de lista ─────────────────────────────────────────────────────
 
-/** @param {Task} task @returns {string} */
 function buildBadgesHTML(task) {
   const { badgeClass, label } = PRIORITY_CONFIG[task.priority] ?? PRIORITY_CONFIG.optional;
 
@@ -627,13 +665,11 @@ function buildBadgesHTML(task) {
   `;
 }
 
-/** @param {Task} task @returns {string} */
 function getDueBorderClass(task) {
   if (!task.dueDate || task.completed) return "";
   return `due-border-${getDueStatus(daysUntilDue(task.dueDate))}`;
 }
 
-/** @param {Task} task @returns {HTMLLIElement} */
 function createTaskElement(task) {
   const li             = document.createElement("li");
   const dueBorderClass = getDueBorderClass(task);
@@ -643,7 +679,7 @@ function createTaskElement(task) {
 
   li.innerHTML = `
     <div class="flex flex-col gap-1 min-w-0">
-      <span class="task-text font-medium text-sm leading-snug truncate"
+      <span class="task-text font-medium text-sm leading-snug"
             title="Doble clic para editar">${escapeHTML(task.text)}</span>
       <div class="flex flex-wrap gap-1">${buildBadgesHTML(task)}</div>
     </div>
@@ -725,8 +761,21 @@ function toggleDarkMode() {
 
 // ─── Inicialización ───────────────────────────────────────────────────────────
 
-function init() {
+async function init() {
   applyDarkMode(localStorage.getItem(STORAGE_KEYS.DARK_MODE) === "true");
+
+  // Carga inicial de tareas desde el servidor
+  try {
+    setLoadingState(true);
+    tasks = await apiFetchTasks();
+  } catch (err) {
+    showNetworkError("No se pudo conectar con el servidor.");
+  } finally {
+    setLoadingState(false);
+  }
+
+  renderTaskList();
+  updateBulkButtons();
 
   document.getElementById("addBtn").addEventListener("click", handleAddTask);
 
@@ -753,9 +802,6 @@ function init() {
   document.getElementById("deleteAllBtn").addEventListener("click", deleteAllTasks);
 
   document.addEventListener("click", () => getAudioContext(), { once: true });
-
-  renderTaskList();
-  updateBulkButtons();
 }
 
 document.addEventListener("DOMContentLoaded", init);

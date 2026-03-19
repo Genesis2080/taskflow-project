@@ -483,3 +483,55 @@ body {
 }
 #undoBtn:hover  { background: #4f46e5; }
 #undoBtn:active { transform: scale(.95); }
+
+/* ─── Indicador de carga ────────────────────────────────────── */
+.loading-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .6rem;
+  padding: 1.5rem;
+  color: #94a3b8;
+  font-size: .85rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.loading-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e2e8f0;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+
+/* ─── Banner de error de red ────────────────────────────────── */
+.network-error-banner {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  translate: -50% -4rem;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1.5px solid #fecaca;
+  border-radius: .65rem;
+  padding: .6rem 1.1rem;
+  font-size: .82rem;
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: translate .25s ease, opacity .25s ease;
+  z-index: 9999;
+  white-space: nowrap;
+}
+.network-error-banner.show {
+  translate: -50% 0;
+  opacity: 1;
+}
+.dark .network-error-banner {
+  background: #7f1d1d;
+  color: #fca5a5;
+  border-color: #991b1b;
+}
