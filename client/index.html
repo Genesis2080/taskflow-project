@@ -11,6 +11,9 @@
 </head>
 <body class="min-h-screen flex items-start justify-center p-3 sm:p-6 lg:p-8">
 
+  <!-- Banner de error de red (fijo arriba) -->
+  <div id="networkError" class="network-error-banner"></div>
+
   <div class="card w-full max-w-2xl p-5 sm:p-7 lg:p-9 rounded-2xl mt-4 sm:mt-8">
 
     <!-- ── Cabecera ─────────────────────────────────────────────── -->
@@ -35,7 +38,6 @@
         <p class="field-error-msg" id="inputError">El nombre de la tarea no puede estar vacío.</p>
       </div>
 
-      <!-- En desktop los selectores y la fecha van en una fila -->
       <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
         <select id="categorySelector" class="field" aria-label="Categoría">
           <option value="General">📋 General</option>
@@ -50,7 +52,6 @@
           <option value="optional">🟢 Opcional</option>
         </select>
 
-        <!-- Fecha límite inline en la misma fila en desktop -->
         <div class="due-date-row sm:flex-1">
           <label for="dueDateInput" class="due-date-label">
             📅 <span class="due-date-optional hidden sm:inline">Fecha límite</span>
@@ -73,27 +74,22 @@
         <button class="filter-btn" data-filter="completed">Completadas</button>
       </nav>
 
-      <!-- Acciones masivas alineadas a la derecha en desktop -->
       <div class="bulk-actions" aria-label="Acciones masivas">
-        <button id="completeAllBtn" class="bulk-btn bulk-btn-complete hidden"
-                aria-label="Marcar todas las tareas como completadas">
+        <button id="completeAllBtn" class="bulk-btn bulk-btn-complete hidden">
           ✔ Completar todas
         </button>
-        <button id="deleteAllBtn" class="bulk-btn bulk-btn-delete hidden"
-                aria-label="Eliminar todas las tareas">
+        <button id="deleteAllBtn" class="bulk-btn bulk-btn-delete hidden">
           ✖ Eliminar todas
         </button>
       </div>
     </div>
-    <!-- Indicador de carga -->
+
+    <!-- ── Indicador de carga ─────────────────────────────────────── -->
     <div id="loadingIndicator" class="loading-indicator" style="display:none">
       <div class="loading-spinner"></div>
       <span>Cargando tareas...</span>
     </div>
 
-    <!-- ── Banner de error de red ────────────────────────────────────── -->
-    <div id="networkError" class="network-error-banner"></div>
-    
     <!-- ── Lista de tareas ───────────────────────────────────────── -->
     <ul id="taskList" role="list" aria-label="Lista de tareas"
         class="space-y-2 overflow-y-auto pr-0.5 task-list"></ul>
@@ -129,6 +125,10 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <!--
+    type="module" permite usar import/export entre archivos JS.
+    El script se carga de forma diferida automáticamente (equivale a defer).
+  -->
+  <script type="module" src="app.js"></script>
 </body>
 </html>
