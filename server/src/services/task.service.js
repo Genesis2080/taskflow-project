@@ -17,10 +17,14 @@ function obtenerTodas() {
  */
 function crearTarea(data) {
   const nuevaTarea = {
-    id:        Date.now().toString(), // ID único basado en timestamp
-    text:      data.text,
-    completed: false,
-    createdAt: new Date().toISOString(),
+    id:          Date.now().toString(),
+    text:        data.text,
+    category:    data.category  || 'General',
+    priority:    data.priority  || 'optional',
+    dueDate:     data.dueDate   || null,
+    completed:   false,
+    createdAt:   new Date().toISOString(),
+    completedAt: null,
   };
 
   tasks.push(nuevaTarea);
