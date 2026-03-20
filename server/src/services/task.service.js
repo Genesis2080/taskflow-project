@@ -1,19 +1,23 @@
-// Persistencia simulada en memoria
-// Cuando reinicies el servidor, este array se vacía (es normal por ahora)
+/**
+ * @fileoverview Servicio de tareas.
+ * Lógica pura: no conoce HTTP ni Express.
+ * Persistencia simulada en memoria (array).
+ */
+
 let tasks = [];
 
 /**
  * Devuelve todas las tareas.
- * @returns {Array} lista de tareas
+ * @returns {Task[]}
  */
 function obtenerTodas() {
   return tasks;
 }
 
 /**
- * Crea una nueva tarea y la añade al array.
- * @param {Object} data - debe contener al menos { text }
- * @returns {Object} la tarea creada
+ * Crea una nueva tarea con todos sus campos.
+ * @param {{ text: string, category: string, priority: string, dueDate: string|null, completed: boolean }} data
+ * @returns {Task}
  */
 function crearTarea(data) {
   const nuevaTarea = {
@@ -22,7 +26,7 @@ function crearTarea(data) {
     category:    data.category  || 'General',
     priority:    data.priority  || 'optional',
     dueDate:     data.dueDate   || null,
-    completed:   false,
+    completed:   data.completed || false,
     createdAt:   new Date().toISOString(),
     completedAt: null,
   };
@@ -32,9 +36,9 @@ function crearTarea(data) {
 }
 
 /**
- * Elimina una tarea por su ID.
+ * Elimina una tarea por ID.
  * @param {string} id
- * @throws {Error} si el ID no existe
+ * @throws {Error} NOT_FOUND si el ID no existe
  */
 function eliminarTarea(id) {
   const index = tasks.findIndex(t => t.id === id);
