@@ -4,7 +4,7 @@
  * llama a fetch directamente.
  */
 
-const API_URL = "http://localhost:3000/api/v1/tasks";
+const API_URL = "taskflow-project-production-c656.up.railway.app";
 
 /**
  * Obtiene todas las tareas del servidor.

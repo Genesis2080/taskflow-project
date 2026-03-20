@@ -37,3 +37,10 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Servidor escuchando en http://localhost:${PORT}`);
 });
+
+app.use(cors({
+  origin: [
+    "http://localhost:5500",                        // desarrollo local
+    "https://taskflow-project-psi-mocha.vercel.app/",               // producción
+  ]
+}));
