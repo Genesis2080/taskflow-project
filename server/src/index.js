@@ -5,7 +5,14 @@ const taskRoutes = require('./routes/task.routes');
 
 const app = express();
 
-app.use(cors());
+// CORS debe ir primero, antes de cualquier ruta
+app.use(cors({
+  origin: [
+    "http://localhost:5500",
+    "https://taskflow-project-psi-mocha.vercel.app",  // sin barra al final
+  ]
+}));
+
 app.use(express.json());
 
 app.use('/api/v1/tasks', taskRoutes);
@@ -14,33 +21,14 @@ app.get('/', (req, res) => {
   res.json({ message: 'Servidor funcionando' });
 });
 
-// ── Middleware global de errores ──────────────────────────────
-// IMPORTANTE: debe ir al final, después de todas las rutas.
-// Express lo identifica por tener exactamente 4 parámetros.
 app.use((err, req, res, next) => {
-
-  // Error conocido: el servicio lanzó 'NOT_FOUND'
   if (err.message === 'NOT_FOUND') {
-    return res.status(404).json({
-      error: 'El recurso solicitado no existe.',
-    });
+    return res.status(404).json({ error: 'El recurso solicitado no existe.' });
   }
-
-  // Error desconocido: lo registramos en consola pero no
-  // filtramos detalles técnicos al cliente por seguridad
   console.error(err);
-  res.status(500).json({
-    error: 'Error interno del servidor.',
-  });
+  res.status(500).json({ error: 'Error interno del servidor.' });
 });
 
 app.listen(PORT, () => {
   console.log(`Servidor escuchando en http://localhost:${PORT}`);
 });
-
-app.use(cors({
-  origin: [
-    "http://localhost:5500",                        // desarrollo local
-    "https://taskflow-project-psi-mocha.vercel.app/",               // producción
-  ]
-}));
