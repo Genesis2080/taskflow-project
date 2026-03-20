@@ -1,18 +1,5 @@
 /**
  * @fileoverview TaskFlow – Punto de entrada principal.
- *
- * Este archivo solo contiene:
- *  - Estado global de la aplicación
- *  - Handlers de eventos (lógica de coordinación)
- *  - Función init()
- *
- * Todo lo demás está delegado a módulos especializados:
- *  - src/api/client.js       → comunicación con el servidor
- *  - src/audio/sounds.js     → Web Audio API
- *  - src/services/stats.service.js → cálculos de estadísticas
- *  - src/ui/render.js        → construcción y actualización del DOM
- *  - src/ui/toast.js         → toast de undo
- *  - src/ui/theme.js         → dark/light mode
  */
 
 import { apiFetchTasks, apiCreateTask, apiDeleteTask } from "./src/api/client.js";
@@ -77,7 +64,7 @@ function refreshStats() {
   });
 }
 
-// ─── Validación de formulario ─────────────────────────────────────────────────
+// ─── Validación ───────────────────────────────────────────────────────────────
 
 function validateTaskInput(text) {
   const input    = document.getElementById("taskInput");
@@ -88,36 +75,50 @@ function validateTaskInput(text) {
   return isValid;
 }
 
-// ─── Handlers de tarea ────────────────────────────────────────────────────────
+// ─── Añadir tarea ─────────────────────────────────────────────────────────────
 
 async function handleAddTask() {
-  const input = document.getElementById("taskInput");
-  const text  = input.value.trim();
-  if (!validateTaskInput(text)) { input.focus(); return; }
+  const taskInput       = document.getElementById("taskInput");
+  const categorySelect  = document.getElementById("categorySelector");
+  const prioritySelect  = document.getElementById("prioritySelector");
+  const dueDateInput    = document.getElementById("dueDateInput");
 
-  const dueDateRaw = document.getElementById("dueDateInput").value;
+  const text     = taskInput.value.trim();
+  const category = categorySelect.value;
+  const priority = prioritySelect.value;
+  const dueDate  = dueDateInput.value || null;
+
+  if (!validateTaskInput(text)) { taskInput.focus(); return; }
+
+  // Verificar que los selectores tienen valor antes de enviar
+  if (!category || !priority) {
+    showNetworkError("Por favor selecciona categoría y prioridad.");
+    return;
+  }
+
+  const payload = { text, category, priority, dueDate, completed: false };
 
   try {
     setLoadingState(true);
-    const newTask = await apiCreateTask({
-      text,
-      category:  document.getElementById("categorySelector").value,
-      priority:  document.getElementById("prioritySelector").value,
-      dueDate:   dueDateRaw || null,
-      completed: false,
-    });
+
+    const newTask = await apiCreateTask(payload);
+
     tasks.push(newTask);
-    input.value = "";
-    document.getElementById("dueDateInput").value = "";
-    input.classList.remove("error");
+    taskInput.value    = "";
+    dueDateInput.value = "";
+    taskInput.classList.remove("error");
     document.getElementById("inputError").style.display = "none";
+
     refresh();
+
   } catch (err) {
     showNetworkError(err.message);
   } finally {
     setLoadingState(false);
   }
 }
+
+// ─── Completar tarea ──────────────────────────────────────────────────────────
 
 function toggleTaskCompletion(taskId) {
   const task = tasks.find(t => t.id === taskId);
@@ -139,6 +140,8 @@ function toggleTaskCompletion(taskId) {
   refresh();
 }
 
+// ─── Completar todas ──────────────────────────────────────────────────────────
+
 function completeAllTasks() {
   const pending = tasks.filter(t => !t.completed);
   if (pending.length === 0) return;
@@ -157,6 +160,8 @@ function completeAllTasks() {
   playCompleteAllSound();
   refresh();
 }
+
+// ─── Eliminar tarea ───────────────────────────────────────────────────────────
 
 async function deleteTask(taskId) {
   if (pendingUndo) pendingUndo.cancel();
@@ -187,6 +192,8 @@ async function deleteTask(taskId) {
   refresh();
 }
 
+// ─── Eliminar todas ───────────────────────────────────────────────────────────
+
 async function deleteAllTasks() {
   if (tasks.length === 0) return;
   if (pendingUndo) pendingUndo.cancel();
@@ -213,6 +220,8 @@ async function deleteAllTasks() {
   refresh();
 }
 
+// ─── Undo ─────────────────────────────────────────────────────────────────────
+
 async function undoDelete() {
   if (!pendingUndo) return;
   pendingUndo.cancel();
@@ -223,8 +232,11 @@ async function undoDelete() {
   try {
     const recreated = await Promise.all(
       restoredTasks.map(t => apiCreateTask({
-        text: t.text, category: t.category,
-        priority: t.priority, dueDate: t.dueDate, completed: t.completed,
+        text:      t.text,
+        category:  t.category,
+        priority:  t.priority,
+        dueDate:   t.dueDate,
+        completed: t.completed,
       }))
     );
     if (typeof index === "number") {
@@ -290,7 +302,7 @@ function applyFilter(filterValue) {
   refresh();
 }
 
-// ─── Panel de estadísticas ────────────────────────────────────────────────────
+// ─── Estadísticas ─────────────────────────────────────────────────────────────
 
 function toggleStats() {
   statsOpen = !statsOpen;
@@ -319,11 +331,12 @@ async function init() {
 
   refresh();
 
-  // Event listeners
   document.getElementById("addBtn").addEventListener("click", handleAddTask);
+
   document.getElementById("taskInput").addEventListener("keydown", e => {
     if (e.key === "Enter") handleAddTask();
   });
+
   document.getElementById("taskInput").addEventListener("input", () => {
     const input = document.getElementById("taskInput");
     if (input.classList.contains("error") && input.value.trim()) {
@@ -331,16 +344,17 @@ async function init() {
       document.getElementById("inputError").style.display = "none";
     }
   });
+
   document.querySelectorAll(".filter-btn").forEach(btn => {
     btn.addEventListener("click", () => applyFilter(btn.dataset.filter));
   });
+
   document.getElementById("darkModeBtn").addEventListener("click", toggleDarkMode);
   document.getElementById("statsBtn").addEventListener("click", toggleStats);
   document.getElementById("undoBtn").addEventListener("click", undoDelete);
   document.getElementById("completeAllBtn").addEventListener("click", completeAllTasks);
   document.getElementById("deleteAllBtn").addEventListener("click", deleteAllTasks);
 
-  // Precalentar AudioContext
   document.addEventListener("click", () => getAudioContext(), { once: true });
 }
 
