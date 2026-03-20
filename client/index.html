@@ -1,127 +1,188 @@
 <!DOCTYPE html>
-<html lang="es" class="transition-colors duration-500">
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TaskFlow – Gestor de Tareas</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
-<body class="min-h-screen flex items-start justify-center p-3 sm:p-6 lg:p-8">
+<body>
 
-  <!-- Banner de error de red (fijo arriba) -->
-  <div id="networkError" class="network-error-banner"></div>
-
-  <div class="card w-full max-w-2xl p-5 sm:p-7 lg:p-9 rounded-2xl mt-4 sm:mt-8">
-
-    <!-- ── Cabecera ─────────────────────────────────────────────── -->
-    <header class="mb-6">
-      <div class="flex items-center justify-between mb-1">
-        <h1 class="brand text-3xl sm:text-4xl text-gray-900 dark:text-white">TaskFlow</h1>
-        <button id="darkModeBtn" class="toggle-pill" aria-label="Cambiar tema">
-          <span id="darkIcon">🌙</span>
-          <span id="darkLabel">Noche</span>
-        </button>
-      </div>
-      <p class="text-sm text-gray-500 dark:text-gray-400">Organiza tu día de forma eficiente</p>
-    </header>
-
-    <!-- ── Formulario de nueva tarea ────────────────────────────── -->
-    <section aria-label="Añadir tarea" class="flex flex-col gap-3 mb-5">
-
-      <div>
-        <input id="taskInput" type="text" maxlength="120"
-          placeholder="¿Qué tienes que hacer hoy?"
-          class="field" aria-label="Nombre de la tarea" autocomplete="off" />
-        <p class="field-error-msg" id="inputError">El nombre de la tarea no puede estar vacío.</p>
-      </div>
-
-      <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
-        <select id="categorySelector" class="field" aria-label="Categoría">
-          <option value="General">📋 General</option>
-          <option value="Trabajo">💼 Trabajo</option>
-          <option value="Estudio">📚 Estudio</option>
-          <option value="Personal">🏠 Personal</option>
-        </select>
-
-        <select id="prioritySelector" class="field" aria-label="Prioridad">
-          <option value="urgent">🔴 Urgente</option>
-          <option value="progress">🟡 En progreso</option>
-          <option value="optional">🟢 Opcional</option>
-        </select>
-
-        <div class="due-date-row sm:flex-1">
-          <label for="dueDateInput" class="due-date-label">
-            📅 <span class="due-date-optional hidden sm:inline">Fecha límite</span>
-          </label>
-          <input id="dueDateInput" type="date" class="field due-date-field"
-                 aria-label="Fecha límite de la tarea" />
-        </div>
-      </div>
-
-      <button id="addBtn" class="btn-primary self-stretch sm:self-end sm:px-8">
-        + Añadir tarea
-      </button>
-    </section>
-
-    <!-- ── Filtros + Acciones masivas ────────────────────────────── -->
-    <div class="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between mb-4">
-      <nav aria-label="Filtros de tareas" class="flex gap-2">
-        <button class="filter-btn active" data-filter="all">Todas</button>
-        <button class="filter-btn" data-filter="pending">Pendientes</button>
-        <button class="filter-btn" data-filter="completed">Completadas</button>
-      </nav>
-
-      <div class="bulk-actions" aria-label="Acciones masivas">
-        <button id="completeAllBtn" class="bulk-btn bulk-btn-complete hidden">
-          ✔ Completar todas
-        </button>
-        <button id="deleteAllBtn" class="bulk-btn bulk-btn-delete hidden">
-          ✖ Eliminar todas
-        </button>
-      </div>
-    </div>
-
-    <!-- ── Indicador de carga ─────────────────────────────────────── -->
-    <div id="loadingIndicator" class="loading-indicator" style="display:none">
-      <div class="loading-spinner"></div>
-      <span>Cargando tareas...</span>
-    </div>
-
-    <!-- ── Lista de tareas ───────────────────────────────────────── -->
-    <ul id="taskList" role="list" aria-label="Lista de tareas"
-        class="space-y-2 overflow-y-auto pr-0.5 task-list"></ul>
-
-    <!-- ── Contador ──────────────────────────────────────────────── -->
-    <footer class="flex justify-center mt-5">
-      <div class="counter-chip">
-        <span>⏳</span>
-        <span id="taskCounter">0</span>
-        <span>pendiente(s)</span>
-      </div>
-    </footer>
-
-    <!-- ── Botón estadísticas ────────────────────────────────────── -->
-    <div class="flex justify-center mt-3">
-      <button id="statsBtn" class="stats-toggle-btn" aria-expanded="false" aria-controls="statsPanel">
-        <span id="statsIcon">📊</span>
-        <span>Estadísticas</span>
-      </button>
-    </div>
-
-    <!-- ── Panel de estadísticas ─────────────────────────────────── -->
-    <div id="statsPanel" class="stats-panel" aria-live="polite"></div>
-
-  </div>
-
-  <!-- ── Toast de undo ────────────────────────────────────────────── -->
+  <!-- Toast de undo -->
   <div id="undoToast" role="status" aria-live="polite">
     <div id="undoProgressBar"></div>
     <div class="undo-toast-body">
       <span id="undoMsg"></span>
       <button id="undoBtn">Deshacer</button>
+    </div>
+  </div>
+
+  <!-- Banner de error de red -->
+  <div id="networkError" class="network-error-banner"></div>
+
+  <div class="app" id="app">
+
+    <!-- ── SIDEBAR ──────────────────────────────────────────────── -->
+    <aside class="sidebar" id="sidebar">
+
+      <div class="sidebar-logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 14 14" fill="none">
+            <path d="M2 7L5.5 10.5L12 3.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="logo-name">TaskFlow</span>
+      </div>
+
+      <div class="sidebar-section">Principal</div>
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-view="all">
+          <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="8.5" y="1" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="1" y="8.5" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1.5" fill="currentColor"/></svg></span>
+          <span class="nav-label">Todas las tareas</span>
+          <span class="nav-badge" id="badge-all">0</span>
+        </button>
+        <button class="nav-item" data-view="pending">
+          <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M7.5 4.5V7.5L9.5 9.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+          <span class="nav-label">Pendientes</span>
+          <span class="nav-badge" id="badge-pending">0</span>
+        </button>
+        <button class="nav-item" data-view="completed">
+          <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 7.5L6 11.5L13 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="nav-label">Completadas</span>
+        </button>
+        <button class="nav-item" data-view="stats">
+          <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="9" width="3" height="4.5" rx="1" fill="currentColor"/><rect x="6" y="5.5" width="3" height="8" rx="1" fill="currentColor"/><rect x="10.5" y="2" width="3" height="11.5" rx="1" fill="currentColor"/></svg></span>
+          <span class="nav-label">Estadísticas</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-section">Categorías</div>
+      <div class="sidebar-cats">
+        <button class="cat-item" data-cat="Trabajo">
+          <span class="cat-dot" style="background:#378ADD;"></span>
+          <span class="cat-label">Trabajo</span>
+          <span class="cat-count" id="cat-Trabajo">0</span>
+        </button>
+        <button class="cat-item" data-cat="Personal">
+          <span class="cat-dot" style="background:#639922;"></span>
+          <span class="cat-label">Personal</span>
+          <span class="cat-count" id="cat-Personal">0</span>
+        </button>
+        <button class="cat-item" data-cat="Estudio">
+          <span class="cat-dot" style="background:#D85A30;"></span>
+          <span class="cat-label">Estudio</span>
+          <span class="cat-count" id="cat-Estudio">0</span>
+        </button>
+        <button class="cat-item" data-cat="General">
+          <span class="cat-dot" style="background:#888780;"></span>
+          <span class="cat-label">General</span>
+          <span class="cat-count" id="cat-General">0</span>
+        </button>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="nav-item theme-btn" id="darkModeBtn" aria-label="Cambiar tema">
+          <span class="nav-icon" id="darkIcon">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M12.5 9.5A5.5 5.5 0 015.5 2.5a5.5 5.5 0 100 10 5.5 5.5 0 007-3z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </span>
+          <span class="nav-label" id="darkLabel">Modo noche</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ── MAIN ─────────────────────────────────────────────────── -->
+    <div class="main">
+
+      <!-- Topbar -->
+      <header class="topbar">
+        <button class="icon-btn" id="toggleSidebar" aria-label="Colapsar menú">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
+        </button>
+        <h1 class="topbar-title" id="topbarTitle">Todas las tareas</h1>
+        <div class="topbar-actions">
+          <button class="icon-btn bulk-complete" id="completeAllBtn" title="Completar todas" style="display:none">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1.5 7.5L5.5 11.5L13.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="icon-btn bulk-delete" id="deleteAllBtn" title="Eliminar todas" style="display:none">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M3 3.5H12M5.5 3.5V2.5H9.5V3.5M6 6V11M9 6V11M4 3.5L4.5 12.5H10.5L11 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="btn-primary" id="newTaskBtn">
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1V10M1 5.5H10" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Nueva tarea
+          </button>
+        </div>
+      </header>
+
+      <!-- Stats strip -->
+      <div class="stats-strip">
+        <div class="stat-card">
+          <div class="stat-val" id="statTotal">0</div>
+          <div class="stat-lbl">Total</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val stat-pending" id="statPending">0</div>
+          <div class="stat-lbl">Pendientes</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val stat-done" id="statDone">0</div>
+          <div class="stat-lbl">Completadas</div>
+          <div class="prog-bar"><div class="prog-fill" id="statProgress" style="width:0%"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val stat-streak" id="statStreak">0</div>
+          <div class="stat-lbl">Racha (días)</div>
+        </div>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="filter-bar">
+        <button class="filter-pill active" data-filter="all">Todas</button>
+        <button class="filter-pill" data-filter="pending">Pendientes</button>
+        <button class="filter-pill" data-filter="completed">Completadas</button>
+      </div>
+
+      <!-- Loading -->
+      <div id="loadingIndicator" class="loading-indicator" style="display:none">
+        <div class="loading-spinner"></div>
+        <span>Cargando tareas...</span>
+      </div>
+
+      <!-- Lista de tareas -->
+      <ul id="taskList" role="list" class="task-list"></ul>
+
+      <!-- Panel de estadísticas -->
+      <div id="statsPanel" class="stats-panel-full" style="display:none"></div>
+
+      <!-- Formulario añadir (desplegable desde el botón Nueva tarea) -->
+      <div class="add-bar" id="addBar" style="display:none">
+        <div class="add-form">
+          <div class="add-row-top">
+            <input id="taskInput" type="text" maxlength="120"
+              placeholder="¿Qué tienes que hacer?"
+              class="add-input-field" autocomplete="off" />
+            <button class="btn-primary" id="addBtn">Añadir</button>
+            <button class="cancel-btn" id="cancelAddBtn">Cancelar</button>
+          </div>
+          <p class="field-error-msg" id="inputError" style="display:none">El nombre no puede estar vacío.</p>
+          <div class="add-row-bottom">
+            <select id="categorySelector" class="mini-select" aria-label="Categoría">
+              <option value="General">📋 General</option>
+              <option value="Trabajo">💼 Trabajo</option>
+              <option value="Estudio">📚 Estudio</option>
+              <option value="Personal">🏠 Personal</option>
+            </select>
+            <select id="prioritySelector" class="mini-select" aria-label="Prioridad">
+              <option value="urgent">🔴 Urgente</option>
+              <option value="progress">🟡 En progreso</option>
+              <option value="optional">🟢 Opcional</option>
+            </select>
+            <input id="dueDateInput" type="date" class="mini-select date-input" aria-label="Fecha límite" />
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
