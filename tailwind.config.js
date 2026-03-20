@@ -1,7 +1,15 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ["./index.html", "./app.js"],
+  // Apunta a todos los archivos del frontend dentro de client/
+  // para que Tailwind sepa qué clases incluir en el build final.
+  content: [
+    "./client/index.html",
+    "./client/app.js",
+    "./client/src/**/*.js",   // cubre api/, audio/, services/ y ui/
+  ],
+
   darkMode: "class",
+
   theme: {
     extend: {
       fontFamily: {
@@ -14,5 +22,6 @@ module.exports = {
       },
     },
   },
+
   plugins: [],
 };
