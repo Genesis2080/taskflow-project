@@ -4,7 +4,7 @@
  * llama a fetch directamente.
  */
 
-const API_URL = import.meta.env?.VITE_API_URL || "/api/v1/tasks";
+const API_URL = "/api/v1/tasks";
 
 /**
  * Obtiene todas las tareas del servidor.
