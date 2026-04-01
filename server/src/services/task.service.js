@@ -50,4 +50,43 @@ function eliminarTarea(id) {
   tasks.splice(index, 1);
 }
 
-module.exports = { obtenerTodas, crearTarea, eliminarTarea };
+/**
+ * Obtiene una tarea por ID.
+ * @param {string} id
+ * @returns {Task|undefined}
+ */
+function obtenerPorId(id) {
+  return tasks.find(t => t.id === id);
+}
+
+/**
+ * Actualiza una tarea por ID.
+ * @param {string} id
+ * @param {Partial<Task>} data
+ * @returns {Task}
+ * @throws {Error} NOT_FOUND si el ID no existe
+ */
+function actualizarTarea(id, data) {
+  const tarea = tasks.find(t => t.id === id);
+  if (!tarea) {
+    throw new Error('NOT_FOUND');
+  }
+  
+  if (data.text !== undefined) tarea.text = data.text;
+  if (data.category !== undefined) tarea.category = data.category;
+  if (data.priority !== undefined) tarea.priority = data.priority;
+  if (data.dueDate !== undefined) tarea.dueDate = data.dueDate;
+  if (data.completed !== undefined) {
+    const wasCompleted = tarea.completed;
+    tarea.completed = data.completed;
+    if (data.completed && !wasCompleted) {
+      tarea.completedAt = new Date().toISOString();
+    } else if (!data.completed && wasCompleted) {
+      tarea.completedAt = null;
+    }
+  }
+  
+  return tarea;
+}
+
+module.exports = { obtenerTodas, obtenerPorId, crearTarea, actualizarTarea, eliminarTarea };

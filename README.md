@@ -1,6 +1,8 @@
 # TaskFlow — Gestor de Tareas
 
-> Aplicación web de productividad construida con **HTML, Tailwind CSS y JavaScript puro (ES6+)**. Sin frameworks, sin dependencias externas, sin compilación.
+> Aplicación web de productividad con **frontend vanilla** (HTML, Tailwind CSS, JS) y **backend Node.js/Express**. 
+> - **Frontend**: Sin frameworks, sin compilación, se abre directamente en el navegador.
+> - **Backend**: API REST con validación exhaustiva y tests de endpoints.
 
 ---
 
@@ -69,27 +71,65 @@ Panel desplegable accesible desde el botón **Estadísticas** con:
 ```
 taskflow-project/
 │
-├── index.html          # Interfaz principal y estructura HTML
-├── style.css           # Estilos personalizados, animaciones y dark mode
-├── app.js              # Toda la lógica de la aplicación
-├── tailwind.config.js  # Configuración de Tailwind CSS
-└── README.md           # Este archivo
+├── client/                     # Frontend (se abre en navegador)
+│   ├── index.html             # Interfaz principal
+│   ├── style.css              # Estilos, animaciones, dark mode
+│   ├── app.js                 # Lógica de la aplicación
+│   ├── tailwind.config.js     # Configuración de Tailwind
+│   └── src/
+│       ├── api/client.js      # Cliente API REST
+│       ├── audio/sounds.js    # Web Audio API
+│       ├── services/stats.service.js  # Estadísticas
+│       └── ui/                # Componentes UI
+│
+├── server/                    # Backend API REST
+│   ├── src/
+│   │   ├── index.js           # Entry point
+│   │   ├── config/env.js      # Variables de entorno
+│   │   ├── routes/            # Rutas Express
+│   │   ├── controllers/       # Handlers de endpoints
+│   │   └── services/          # Lógica de negocio
+│   ├── .env
+│   ├── package.json
+│   └── README.md              # Documentación técnica
+│
+├── vercel.json                # Configuración Vercel
+├── tailwind.config.js
+└── README.md                  # Este archivo
 ```
 
 ---
 
 ## ⚡ Instalación y uso
 
-### 1. Clonar el repositorio
+### Frontend (solo navegador)
 
 ```bash
 git clone https://github.com/Genesis2080/taskflow-project.git
 cd taskflow-project
+# Abre client/index.html en tu navegador
 ```
 
-### 2. Abrir en el navegador
+No se requiere servidor ni compilación. El frontend se conecta al backend en producción o puedes iniciar el servidor local.
 
-No se requiere servidor ni compilación. Abre directamente `index.html` en cualquier navegador moderno.
+### Backend (API REST)
+
+```bash
+cd taskflow-project/server
+npm install
+npm run dev    # Desarrollo con hot-reload
+# o
+npm start      # Producción
+```
+
+El servidor escucha en `http://localhost:3000`.
+
+### Tests de API
+
+```bash
+cd server
+node test-api.js
+```
 
 ---
 

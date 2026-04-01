@@ -1,11 +1,10 @@
-const express    = require('express');
-const cors       = require('cors');
-const { PORT }   = require('./config/env');
-const taskRoutes = require('./routes/task.routes');
+// Vercel server entry point
+const express = require('express');
+const cors = require('cors');
+const taskRoutes = require('../server/src/routes/task.routes');
 
 const app = express();
 
-// CORS debe ir primero, antes de cualquier ruta
 app.use(cors({
   origin: [
     "http://localhost:5500",
@@ -29,12 +28,4 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Error interno del servidor.' });
 });
 
-// Exportar para Vercel (serverless)
 module.exports = app;
-
-// Si se ejecuta directamente (local), escuchar en puerto
-if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`Servidor escuchando en http://localhost:${PORT}`);
-  });
-}
