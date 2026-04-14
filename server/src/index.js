@@ -7,10 +7,7 @@ const app = express();
 
 // CORS debe ir primero, antes de cualquier ruta
 app.use(cors({
-  origin: [
-    "http://localhost:5500",
-    "https://taskflow-project-psi-mocha.vercel.app",
-  ]
+  origin: "*"
 }));
 
 app.use(express.json());
